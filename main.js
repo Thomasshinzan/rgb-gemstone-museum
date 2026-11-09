@@ -2,7 +2,7 @@ import { state, RANK_DATA, saveData, loadSaveData } from './gameState.js';
 import { 
   showScreen, showCustomAlert, updateShopUI, renderZukan, 
   checkNobleQuest, checkCountessQuest, updateMineMenuUI, 
-  updateLongExpeditionUI, updateNobleExpeditionUI, renderInventory,
+  updateLongExpeditionUI, updateNobleExpeditionUI,
   checkMineUpgradeQuest, renderWorkshop, updateWorkshopProgress, renderLab
 } from './gameUI.js';
 import { appraiser, startMiningProcess, renderMissions, startFusionProcess } from './gameLogic.js';
