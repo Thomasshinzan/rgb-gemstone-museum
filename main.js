@@ -2,7 +2,7 @@ import { state, RANK_DATA, saveData, loadSaveData } from './gameState.js';
 import { 
   showScreen, showCustomAlert, updateShopUI, renderZukan, 
   checkNobleQuest, checkCountessQuest, updateMineMenuUI, 
-  updateLongExpeditionUI, updateNobleExpeditionUI,
+  updateLongExpeditionUI, updateNobleExpeditionUI, 
   checkMineUpgradeQuest, renderWorkshop, updateWorkshopProgress, renderLab
 } from './gameUI.js';
 import { appraiser, startMiningProcess, renderMissions, startFusionProcess } from './gameLogic.js';
@@ -23,7 +23,7 @@ async function startApp() {
   
   checkMineUpgradeQuest();
   
-  if (state.shopRank >= 5) {
+  if (state.shopRank >= 4) {
     state.workshopUnlocked = true;
   }
   
@@ -49,7 +49,7 @@ document.getElementById('btn-expand-shop').addEventListener('click', () => {
   state.money -= nextRankData.cost;
   state.shopRank++;
   
-  if (state.shopRank >= 5) {
+  if (state.shopRank >= 4) {
     state.workshopUnlocked = true;
   }
 
@@ -189,7 +189,6 @@ document.getElementById('btn-start-fusion').addEventListener('click', () => {
   
   startFusionProcess(gemA, gemB);
 });
-
 
 // --- 採掘のイベントバインディング ---
 document.getElementById('btn-buy-mine').addEventListener('click', () => {
