@@ -1,10 +1,10 @@
 export const RANK_DATA = [
   { name: "未登録", cost: 0, employees: 0 },
   { name: "粗末な木箱の並ぶ店", cost: 0, employees: 0 },
-  { name: "こぢんまりとした屋台", cost: 30000, employees: 1 },
-  { name: "町外れの店舗", cost: 300000, employees: 2 },
-  { name: "王都の宝石商", cost: 800000, employees: 4 },
-  { name: "王室御用達の伝説店", cost: 1500000, employees: 8 }
+  { name: "こぢんまりとした屋台", cost: 50000, employees: 1 },
+  { name: "町外れの店舗", cost: 450000, employees: 2 },
+  { name: "王都の宝石商", cost: 1200000, employees: 4 },
+  { name: "王室御用達の伝説店", cost: 2500000, employees: 8 }
 ];
 
 export const state = {
