@@ -34,8 +34,8 @@
     #btn-expand-shop { background: linear-gradient(to bottom, #4a6b8c, #2a4b6c); border: 2px solid #8ca6c0; color: #e0d5c1; flex: 1; }
     #nav-zukan-btn { background: linear-gradient(to bottom, #4a3929, #2d2319); border: 2px solid #8b6b4a; color: #e0d5c1; flex: 1; }
     
-    #appraisal-top { background: #221a14; border: 1px solid #5c4734; border-radius: 10px; margin-bottom: 10px; height: 210px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
-    #appraisal-bottom { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; background: #221a14; padding: 20px; border-radius: 10px; min-height: 100px; max-height: 35vh; overflow-y: auto; align-content: flex-start; border: 1px solid #5c4734; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+    #appraisal-top { background: #221a14; border: 1px solid #5c4734; border-radius: 10px; margin-bottom: 10px; height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+    #appraisal-bottom { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; background: #221a14; padding: 15px; border-radius: 10px; min-height: 100px; max-height: 28vh; overflow-y: auto; align-content: flex-start; border: 1px solid #5c4734; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
     
     #focus-name { font-size: 1.4rem; font-weight: bold; color: #d4af37; margin-bottom: 5px; text-shadow: 1px 1px 3px #000; }
     #focus-details { font-size: 1rem; color: #a99a86; }
@@ -43,7 +43,13 @@
     
     .rough-stone { position: relative; width: 50px; height: 50px; background-color: #3d3126; border-radius: 6px; cursor: pointer; border: 2px solid #5c4734; display: flex; align-items: center; justify-content: center; box-shadow: inset 2px 2px 5px rgba(255,255,255,0.05), 2px 2px 5px rgba(0,0,0,0.8); transition: all 0.2s ease; }
     .rough-stone.gem-visual-appraised { border-radius: 50%; border: none; background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.2) 20%, transparent 50%), linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 40%, rgba(0,0,0,0.6) 100%); box-shadow: inset -3px -3px 8px rgba(0,0,0,0.6), inset 3px 3px 8px rgba(255,255,255,0.6), 2px 4px 6px rgba(0,0,0,0.7); }
-    .rough-stone.kuzu-appraised { border-radius: 6px; border: 2px solid #241c15; box-shadow: inset 2px 2px 8px rgba(0,0,0,0.8); }
+    
+    .rough-stone.kuzu-appraised { 
+        border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; 
+        border: 2px solid #1a1410; 
+        box-shadow: inset 4px 4px 10px rgba(0,0,0,0.9), 2px 4px 6px rgba(0,0,0,0.5); 
+        background-image: linear-gradient(45deg, transparent 45%, rgba(0,0,0,0.7) 48%, rgba(255,255,255,0.1) 50%, transparent 52%);
+    }
     
     .gem-kept { border: 2px solid #d4af37 !important; transform: scale(0.9); filter: brightness(0.6); box-shadow: 0 0 10px rgba(212,175,55,0.5) !important; }
     .badge-keep { position: absolute; top: -5px; right: -5px; background: #d4af37; color: #111; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.8); z-index: 10; pointer-events: none; }
@@ -86,7 +92,7 @@
     @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
     
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 1000; align-items: center; justify-content: center; }
-    .modal-box { background: #2a221a; border: 2px solid #8b6b4a; border-radius: 8px; padding: 30px 20px; text-align: center; box-shadow: 0 0 30px rgba(139, 107, 74, 0.4); width: 85%; max-width: 380px; max-height: 90vh; overflow-y: auto; }
+    .modal-box { background: #2a221a; border: 2px solid #8b6b4a; border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 0 30px rgba(139, 107, 74, 0.4); width: 85%; max-width: 380px; max-height: 85vh; overflow-y: auto; }
     .modal-btn-group { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 25px; }
     .modal-btn { padding: 12px 20px; font-size: 1.1rem; border: 1px solid #8b6b4a; flex: 1; min-width: 100px; }
     
@@ -100,7 +106,7 @@
   <div id="mine-select-overlay" class="modal-overlay">
     <div class="modal-box">
       <h3 style="color: #d4af37; margin-top: 0; font-size: 1.5rem; text-shadow: 1px 1px 2px #000;">派遣先を選択</h3>
-      <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
+      <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px; max-height: 60vh; overflow-y: auto; padding-right: 5px;">
         
         <div id="mine-personal-container" style="display: flex; flex-direction: column; gap: 5px;">
           <button id="btn-buy-mine" class="modal-btn" style="background: linear-gradient(to bottom, #d4af37, #b8860b); color: #111; text-align: center; padding: 15px;">
@@ -258,7 +264,7 @@
     </div>
     <div id="appraisal-bottom"></div>
     
-    <div style="font-size: 1.4rem; font-weight: bold; color: #f4d03f; margin: 15px 0;">
+    <div style="font-size: 1.3rem; font-weight: bold; color: #f4d03f; margin: 10px 0;">
       現在の査定総額: <span id="session-total-display">0</span> G
     </div>
     
@@ -291,7 +297,7 @@
     </div>
   </div>
 
-  <!-- 工房画面 (加工用 保管庫を統合) -->
+  <!-- 工房画面 -->
   <div id="workshop-screen" class="screen">
     <h2 class="shop-title" style="margin-top: 10px; font-size: 1.8rem;">工房</h2>
     
