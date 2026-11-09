@@ -9,7 +9,6 @@ import {
 export const appraiser = new Appraiser();
 let appraisingMissionKey = null;
 
-// --- 採掘の実行 ---
 export function startMiningProcess(cost, minGems, maxGems, typeKey, typeName, timeSec, poolType) {
   if (state.money < cost) {
     showCustomAlert(`資金が足りません。<br>派遣には ${cost.toLocaleString()} G 必要です。`);
@@ -29,7 +28,6 @@ export function startMiningProcess(cost, minGems, maxGems, typeKey, typeName, ti
   renderMissions(); 
 }
 
-// --- ミッション描画と鑑定所への遷移 ---
 export function renderMissions() {
   const missionsUi = document.getElementById('missions-ui');
   missionsUi.innerHTML = '';
@@ -74,7 +72,6 @@ export function renderMissions() {
   });
 }
 
-// --- 鑑定所のセットアップとロジック ---
 function setupAppraisalRoom(gemCount, poolType = 'mineId1') {
   const focusVisual = document.getElementById('focus-visual');
   const focusName = document.getElementById('focus-name');
@@ -164,14 +161,6 @@ function setupAppraisalRoom(gemCount, poolType = 'mineId1') {
           bulkBtn.style.display = 'none';
           sellBtn.disabled = false;
           sellBtn.textContent = '確定して店に戻る';
-          
-          setTimeout(() => {
-            let msg = "✨ <b>鑑定がすべて完了しました！</b><br><br>これらは自動的に売却されます。";
-            if (state.workshopUnlocked) {
-              msg += "<br>タップして選択（キープ）すると、<br>宝石は<b>「工房」</b>へ、クズ石は<b>「実験室」</b>へ送られます。";
-            }
-            showCustomAlert(msg, true);
-          }, 100);
         }
         
       } else if (allRevealed) {
@@ -323,7 +312,6 @@ function setupAppraisalRoom(gemCount, poolType = 'mineId1') {
   };
 }
 
-// --- 錬金術の融合処理 ---
 export function startFusionProcess(gemA, gemB) {
   const overlay = document.getElementById('fusion-progress-overlay');
   overlay.style.display = 'flex';
@@ -411,16 +399,47 @@ export function startFusionProcess(gemA, gemB) {
           r: hitGem.r, g: hitGem.g, b: hitGem.b, rarity: hitGem.rarity,
           carat: newCarat, clarity: newClarity, purity: newPurity, price: newPrice, acquiredAt: Date.now()
         };
+
+        const zEntry = state.zukanData[hitGem.id];
+        let isNew = false;
+        if (!zEntry.discovered) {
+          isNew = true;
+          zEntry.discovered = true;
+        }
+        if (newPurity > zEntry.maxPurity) {
+          zEntry.maxPurity = newPurity;
+          zEntry.bestCarat = newCarat;
+          zEntry.bestClarity = newClarity;
+        }
         
+        let msg = `✨ <b>融合成功！</b><br><br>見事な <b>${hitGem.name}</b> が誕生しました！`;
+        if (isNew) msg += `<span class="badge-new">New!!</span>`;
+        
+        let questCleared = false;
+        if (parseFloat(newCarat) >= 2.00 && state.nobleQuestState === 1) {
+          state.nobleQuestState = 2; 
+          state.money += 20000; 
+          msg += `<br><br>📜 <b>【依頼達成！】</b><br>融合で2カラット超えの宝石を生み出し、貴族から謝礼 <b>20,000 G</b> を受け取りました！`;
+          questCleared = true;
+        }
+        if (newPurity >= 90 && state.countessQuestState === 1) {
+          state.countessQuestState = 2;
+          state.neighborTradeUnlocked = true; 
+          msg += `<br><br>📜 <b>【特注依頼 達成！】</b><br>純度90%以上の完璧な宝石を錬成し、伯爵夫人の口利きで<b>隣国との独占取引</b>が可能になりました！`;
+          questCleared = true;
+        }
+
         if (state.inventory.length < 20) {
             state.inventory.push(newGemData);
             saveData();
-            showCustomAlert(`✨ <b>融合成功！</b><br><br>見事な <b>${hitGem.name}</b> が誕生しました！<br>この宝石は工房に送られました。`, true);
+            if (questCleared) { updateShopUI(); checkCountessQuest(); }
+            showCustomAlert(msg + `<br><br>この宝石は工房に送られました。`, true);
         } else {
             state.money += newPrice;
             saveData();
-            showCustomAlert(`✨ <b>融合成功！</b><br><br>見事な <b>${hitGem.name}</b> が誕生しました！<br>※工房が満杯のため、自動的に売却され <b style="color:#f4d03f;">${newPrice.toLocaleString()} G</b> を得ました。`, true);
             updateShopUI();
+            if (questCleared) checkCountessQuest();
+            showCustomAlert(msg + `<br><br>※工房が満杯のため自動的に売却され <b style="color:#f4d03f;">${newPrice.toLocaleString()} G</b> を得ました。`, true);
         }
         
       } else {
