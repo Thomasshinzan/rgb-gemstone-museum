@@ -1,5 +1,5 @@
 import { Appraiser } from './appraiser.js';
-import { state, saveData } from './gameState.js';
+import { state, saveData, grantAlchemyXP } from './gameState.js';
 import { 
   showScreen, showCustomAlert, updateShopUI, 
   checkNobleQuest, checkCountessQuest, renderLab,
@@ -406,6 +406,7 @@ export function startFusionProcess(gemA, gemB) {
         };
 
         const zEntry = state.zukanData[hitGem.id];
+        const prevMaxPurity = zEntry.maxPurity;
         let isNew = false;
         if (!zEntry.discovered) {
           isNew = true;
@@ -416,6 +417,11 @@ export function startFusionProcess(gemA, gemB) {
           zEntry.bestCarat = newCarat;
           zEntry.bestClarity = newClarity;
         }
+
+        // 錬金術XP: 基礎 = カラット × 純度 ÷ 10。新規登録 ×1 / 登録済み ×2 / 最高純度更新 ×3
+        const xpMult = isNew ? 1 : (newPurity > prevMaxPurity ? 3 : 2);
+        const xpGain = Math.max(1, Math.round(parseFloat(newCarat) * newPurity / 10)) * xpMult;
+        const xpEvents = grantAlchemyXP(xpGain);
         
         let msg = `✨ <b>融合成功！</b><br><br>見事な <b>${hitGem.name}</b> が誕生しました！`;
         if (isNew) msg += `<span class="badge-new">New!!</span>`;
@@ -426,6 +432,15 @@ export function startFusionProcess(gemA, gemB) {
           state.money += 20000; 
           msg += `<br><br>📜 <b>【依頼達成！】</b><br>融合で2カラット超えの宝石を生み出し、貴族から謝礼 <b>20,000 G</b> を受け取りました！`;
           questCleared = true;
+        }
+
+        const xpMultLabel = xpMult === 3 ? '（最高純度更新ボーナス ×3）' : (xpMult === 2 ? '（図鑑登録済みボーナス ×2）' : '');
+        msg += `<br><br>⚗️ <b>錬金術XP +${xpGain}</b>${xpMultLabel}`;
+        for (const lv of xpEvents.levelsGained) {
+          msg += `<br>🎉 <b>錬金術レベルが ${lv} に上がりました！</b>`;
+        }
+        if (xpEvents.bookDiscovered) {
+          msg += `<br><br>📖 <b>【東方由来の錬金術書の発見！】</b><br>実験を重ねるなか、錬金術室の古い棚の奥から、東方由来の錬金術書が見つかりました。<br>しかし書には封印がかけられており、手に入れるには然るべき対価が必要らしい……。`;
         }
 
         if (state.inventory.length < 20) {
