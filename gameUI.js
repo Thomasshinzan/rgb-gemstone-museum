@@ -326,7 +326,16 @@ export function renderWorkshop() {
         el.addEventListener('click', () => {
           focusVisual.className = 'focus-gem';
           focusVisual.style.backgroundColor = `rgb(${gem.r}, ${gem.g}, ${gem.b})`;
-          focusName.textContent = gem.name;
+          const nameMatch = gem.name.match(/^(.*?)\s*\((.*)\)\s*$/);
+          if (nameMatch) {
+            const jpName = nameMatch[1];
+            const enName = nameMatch[2];
+            const jpClass = jpName.length >= 13 ? 'focus-name-jp long' : 'focus-name-jp';
+            const enClass = enName.length >= 21 ? 'focus-name-en long' : 'focus-name-en';
+            focusName.innerHTML = `<span class="${jpClass}">${jpName}</span><span class="${enClass}">(${enName})</span>`;
+          } else {
+            focusName.textContent = gem.name;
+          }
           focusName.style.color = '#d4af37';
           
           let rarityColor = '#e0d5c1';
