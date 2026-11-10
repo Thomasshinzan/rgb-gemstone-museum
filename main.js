@@ -49,6 +49,7 @@ document.getElementById('btn-expand-shop').addEventListener('click', () => {
   state.money -= nextRankData.cost;
   state.shopRank++;
   
+  const justUnlockedFacilities = !state.workshopUnlocked && state.shopRank >= 4;
   if (state.shopRank >= 4) {
     state.workshopUnlocked = true;
   }
@@ -56,6 +57,9 @@ document.getElementById('btn-expand-shop').addEventListener('click', () => {
   updateShopUI();
   saveData();
   showCustomAlert(`✨ <b>店舗を拡張しました！</b><br><br>店舗ランクが ${state.shopRank} に上がり、「${nextRankData.name}」になりました！`);
+  if (justUnlockedFacilities) {
+    showCustomAlert("🔓 <b>【新施設が解放されました！】</b><br><br>店舗の拡張にあわせて、<b>工房</b>と<b>錬金術室</b>が使えるようになりました。メイン画面にボタンが追加されています。<br><br>⚒️ <b>工房</b>：鑑定した宝石をタップすると「保管」できるようになりました。保管した宝石は工房で加工すると、指輪・ネックレス・王冠になって高く売れます。<br><br>⚗️ <b>錬金術室</b>：鑑定したクズ石もタップで保管でき、錬金術室に送られます。クズ石を2個融合すると、色が混ざり合って新しい宝石が生まれることがあります。<br><br>どちらの保管も最大20個までです。", true);
+  }
   checkNobleQuest();
   checkCountessQuest(); 
   checkMineUpgradeQuest(); 
