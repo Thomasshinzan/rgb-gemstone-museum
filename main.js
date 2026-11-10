@@ -167,6 +167,7 @@ document.getElementById('btn-collect-craft').addEventListener('click', () => {
   
   const price = state.activeCraft.resultPrice;
   const name = state.activeCraft.resultName;
+  const sourceGem = state.activeCraft.gem;
   state.money += price;
   state.activeCraft = null; 
   
@@ -177,6 +178,12 @@ document.getElementById('btn-collect-craft').addEventListener('click', () => {
   renderWorkshop();
   
   showCustomAlert(`✨ <b>宝飾品を売却しました！</b><br><br>見事な <b>${name}</b> が高値で取引され、<br><b style="color:#f4d03f; font-size:1.3rem;">${price.toLocaleString()} G</b> の資金を得ました！`);
+  if (state.countessQuestState === 1 && sourceGem && sourceGem.purity >= 90) {
+    state.countessQuestState = 2;
+    state.neighborTradeUnlocked = true;
+    saveData();
+    showCustomAlert("✨ <b>【伯爵夫人の特注依頼 達成！】</b><br><br>完成した宝飾品は、噂を聞きつけた伯爵夫人がその場で買い上げました！<br>「素晴らしいわ！この輝きこそ私にふさわしい！」<br><br>夫人の口利きにより<b>隣国との独占取引</b>が可能になりました！", true);
+  }
 });
 
 document.getElementById('btn-start-fusion').addEventListener('click', () => {
