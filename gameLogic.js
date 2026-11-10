@@ -258,13 +258,6 @@ function setupAppraisalRoom(gemCount, poolType = 'mineId1') {
         checkCountessQuest(); 
       }
 
-      if (!gemResult.isKuzu && gemResult.purity >= 90 && state.countessQuestState === 1) {
-        state.countessQuestState = 2;
-        state.neighborTradeUnlocked = true; 
-        updateShopUI();
-        saveData();
-        showCustomAlert("✨ <b>【伯爵夫人の特注依頼 達成！】</b><br><br>「素晴らしいわ！この輝きこそ私にふさわしい！」<br><br>伯爵夫人は大いに喜びました！<br>さらに、夫人の口利きにより<b>隣国との独占取引</b>が可能になりました！", true);
-      }
     });
 
     appraisalBottom.appendChild(roughStone);
@@ -432,12 +425,6 @@ export function startFusionProcess(gemA, gemB) {
           state.nobleQuestState = 2; 
           state.money += 20000; 
           msg += `<br><br>📜 <b>【依頼達成！】</b><br>融合で2カラット超えの宝石を生み出し、貴族から謝礼 <b>20,000 G</b> を受け取りました！`;
-          questCleared = true;
-        }
-        if (newPurity >= 90 && state.countessQuestState === 1) {
-          state.countessQuestState = 2;
-          state.neighborTradeUnlocked = true; 
-          msg += `<br><br>📜 <b>【特注依頼 達成！】</b><br>純度90%以上の完璧な宝石を錬成し、伯爵夫人の口利きで<b>隣国との独占取引</b>が可能になりました！`;
           questCleared = true;
         }
 

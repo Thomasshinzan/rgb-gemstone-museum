@@ -160,10 +160,10 @@ export function checkNobleQuest() {
 }
 
 export function checkCountessQuest() {
-  if (state.shopRank >= 4 && state.nobleQuestState === 2 && state.countessQuestState === 0) {
+  if (state.shopRank >= 5 && state.nobleQuestState === 2 && state.countessQuestState === 0) {
     state.countessQuestState = 1;
     saveData();
-    showCustomAlert("📜 <b>【伯爵夫人からの特注依頼】</b><br><br>「私の美しさにふさわしい、純度90%以上の完璧な宝石を探してちょうだい」<br><br>鑑定所で純度90%以上の宝石を引き当てましょう！報酬は隣国との独占取引権です。", true);
+    showCustomAlert("📜 <b>【伯爵夫人からの特注依頼】</b><br><br>「王室御用達の店の工房仕事、ぜひ見せてちょうだい。純度90%以上の宝石を使った宝飾品を所望するわ」<br><br>純度90%以上の宝石を保管して工房で加工し、完成品を受け取りましょう！報酬は隣国との独占取引権です。", true);
   }
 }
 
