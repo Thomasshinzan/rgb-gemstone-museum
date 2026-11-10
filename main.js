@@ -57,6 +57,9 @@ document.getElementById('btn-expand-shop').addEventListener('click', () => {
   updateShopUI();
   saveData();
   showCustomAlert(`✨ <b>店舗を拡張しました！</b><br><br>店舗ランクが ${state.shopRank} に上がり、「${nextRankData.name}」になりました！`);
+  if (state.shopRank === 3) {
+    showCustomAlert("⛏️ <b>【新しい採掘先が解放されました！】</b><br><br>店舗の評判が貴族社会にも届き、<b>貴族の私有鉱山</b>への立ち入りが許されました！<br><br>「鉱山へ派遣」メニューに<b>特別派遣</b>が追加されています。通常の長期遠征とは違う種類の宝石が発掘できる鉱山で、20分・5,000 Gから派遣できます。", true);
+  }
   if (justUnlockedFacilities) {
     showCustomAlert("🔓 <b>【新施設が解放されました！】</b><br><br>店舗の拡張にあわせて、<b>工房</b>と<b>錬金術室</b>が使えるようになりました。メイン画面にボタンが追加されています。<br><br>⚒️ <b>工房</b>：鑑定した宝石をタップすると「保管」できるようになりました。保管した宝石は工房で加工すると、指輪・ネックレス・王冠になって高く売れます。<br><br>⚗️ <b>錬金術室</b>：鑑定したクズ石もタップで保管でき、錬金術室に送られます。クズ石を2個融合すると、色が混ざり合って新しい宝石が生まれることがあります。<br><br>どちらの保管も最大20個までです。", true);
   }
