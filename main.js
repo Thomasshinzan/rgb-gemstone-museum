@@ -270,6 +270,9 @@ document.getElementById('confirm-yes-btn').addEventListener('click', () => {
   localStorage.clear();
   state.money = 15000;
   state.shopRank = 1;
+  state.alchemyLevel = 1;
+  state.alchemyXP = 0;
+  state.bookDiscovered = false;
   state.employees = 0;
   state.nobleQuestState = 0;
   state.countessQuestState = 0;
@@ -294,7 +297,10 @@ document.getElementById('btn-export-save').addEventListener('click', () => {
   saveData();
   const saveObj = { 
     money: state.money, 
-    shopRank: state.shopRank, 
+    shopRank: state.shopRank,
+    alchemyLevel: state.alchemyLevel,
+    alchemyXP: state.alchemyXP,
+    bookDiscovered: state.bookDiscovered,
     nobleQuestState: state.nobleQuestState, 
     countessQuestState: state.countessQuestState, 
     neighborTradeUnlocked: state.neighborTradeUnlocked,
@@ -330,6 +336,9 @@ document.getElementById('btn-do-import').addEventListener('click', () => {
     const saveObj = JSON.parse(decodeURIComponent(atob(saveStr)));
     state.money = saveObj.money || 15000;
     state.shopRank = saveObj.shopRank || 1;
+    state.alchemyLevel = saveObj.alchemyLevel || 1;
+    state.alchemyXP = saveObj.alchemyXP || 0;
+    state.bookDiscovered = saveObj.bookDiscovered || false;
     state.nobleQuestState = saveObj.nobleQuestState || 0;
     state.countessQuestState = saveObj.countessQuestState || 0;
     state.neighborTradeUnlocked = saveObj.neighborTradeUnlocked || false;

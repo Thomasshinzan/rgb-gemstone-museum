@@ -7,9 +7,16 @@ export const RANK_DATA = [
   { name: "王室御用達の伝説店", cost: 2500000, employees: 8 }
 ];
 
+export const ALCHEMY_MAX_LEVEL = 12;
+// 錬金術レベル n → n+1 に必要なXP（Lv2到達で東方の錬金術書の発見イベント）
+export const ALCHEMY_XP_TABLE = { 1: 150, 2: 750, 3: 850, 4: 950, 5: 1150, 6: 1300, 7: 1450, 8: 1900, 9: 2300, 10: 2700, 11: 3200 };
+
 export const state = {
   money: 15000,
   shopRank: 1,
+  alchemyLevel: 1,
+  alchemyXP: 0,
+  bookDiscovered: false,
   employees: 0,
   nobleQuestState: 0,
   countessQuestState: 0,
@@ -25,8 +32,29 @@ export const state = {
   labSelection: []     // 融合のために選択中のインデックス
 };
 
+// 錬金術XPを加算し、レベルアップと書の発見を処理する。戻り値: { levelsGained: number[], bookDiscovered: boolean }
+export function grantAlchemyXP(gain) {
+  const events = { levelsGained: [], bookDiscovered: false };
+  if (state.alchemyLevel >= ALCHEMY_MAX_LEVEL || gain <= 0) return events;
+  state.alchemyXP += gain;
+  while (state.alchemyLevel < ALCHEMY_MAX_LEVEL && state.alchemyXP >= ALCHEMY_XP_TABLE[state.alchemyLevel]) {
+    state.alchemyXP -= ALCHEMY_XP_TABLE[state.alchemyLevel];
+    state.alchemyLevel++;
+    events.levelsGained.push(state.alchemyLevel);
+    if (state.alchemyLevel === 2 && !state.bookDiscovered) {
+      state.bookDiscovered = true;
+      events.bookDiscovered = true;
+    }
+  }
+  if (state.alchemyLevel >= ALCHEMY_MAX_LEVEL) state.alchemyXP = 0;
+  return events;
+}
+
 export function saveData() {
   localStorage.setItem('rgbMiner_money', state.money.toString());
+  localStorage.setItem('rgbMiner_alchemyLevel', state.alchemyLevel.toString());
+  localStorage.setItem('rgbMiner_alchemyXP', state.alchemyXP.toString());
+  localStorage.setItem('rgbMiner_bookDiscovered', state.bookDiscovered ? "1" : "0");
   localStorage.setItem('rgbMiner_shopRank', state.shopRank.toString());
   localStorage.setItem('rgbMiner_nobleQuestState', state.nobleQuestState.toString());
   localStorage.setItem('rgbMiner_countessQuestState', state.countessQuestState.toString());
@@ -54,7 +82,13 @@ export function saveData() {
 export function loadSaveData() {
   const savedMoney = localStorage.getItem('rgbMiner_money');
   if (savedMoney !== null) state.money = parseInt(savedMoney, 10);
-  
+
+  const savedAlchemyLevel = localStorage.getItem('rgbMiner_alchemyLevel');
+  if (savedAlchemyLevel !== null) state.alchemyLevel = parseInt(savedAlchemyLevel, 10);
+  const savedAlchemyXP = localStorage.getItem('rgbMiner_alchemyXP');
+  if (savedAlchemyXP !== null) state.alchemyXP = parseInt(savedAlchemyXP, 10);
+  if (localStorage.getItem('rgbMiner_bookDiscovered') === "1") state.bookDiscovered = true;
+
   const savedRank = localStorage.getItem('rgbMiner_shopRank');
   if (savedRank !== null) state.shopRank = parseInt(savedRank, 10);
   

@@ -1,4 +1,4 @@
-import { state, RANK_DATA, saveData } from './gameState.js';
+import { state, RANK_DATA, saveData, ALCHEMY_XP_TABLE, ALCHEMY_MAX_LEVEL } from './gameState.js';
 
 export function showScreen(screenEl) {
   document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
@@ -394,6 +394,12 @@ export function updateWorkshopProgress() {
 }
 
 export function renderLab() {
+  const alchemyInfo = document.getElementById('lab-alchemy-info');
+  if (alchemyInfo) {
+    alchemyInfo.textContent = state.alchemyLevel >= ALCHEMY_MAX_LEVEL
+      ? `⚗️ 錬金術Lv.${state.alchemyLevel}（MAX）`
+      : `⚗️ 錬金術Lv.${state.alchemyLevel}　XP: ${state.alchemyXP} / ${ALCHEMY_XP_TABLE[state.alchemyLevel]}`;
+  }
   document.getElementById('lab-capacity').textContent = `保管状況: ${state.labInventory.length} / 20`;
   const listContainer = document.getElementById('lab-inventory-list');
   listContainer.innerHTML = '';
