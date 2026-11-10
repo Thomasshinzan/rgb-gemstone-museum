@@ -209,9 +209,9 @@ function setupAppraisalRoom(gemCount, poolType = 'mineId1') {
         }
       }
 
-      let nameHtml = gemResult.name;
+      let badgeHtml = '';
       if (isNew) {
-        nameHtml += `<span class="badge-new">New!!</span>`;
+        badgeHtml = `<span class="badge-new">New!!</span>`;
       } else if (stoneObj.isKept) {
         let inInv = 0;
         let inSession = 0;
@@ -223,9 +223,21 @@ function setupAppraisalRoom(gemCount, poolType = 'mineId1') {
             inSession = stonesData.filter(s => s.isKept && s.result.id === gemResult.id).length;
         }
         const totalKept = inInv + inSession;
-        nameHtml += `<span style="font-size: 0.8em; color: #a99a86; margin-left: 10px;">(保管数: ${totalKept}個)</span>`;
+        badgeHtml = `<span style="font-size: 0.8em; color: #a99a86; margin-left: 10px;">(保管数: ${totalKept}個)</span>`;
       }
-      
+
+      const nameMatch = gemResult.name.match(/^(.*?)\s*\((.*)\)\s*$/);
+      let nameHtml;
+      if (nameMatch) {
+        const jpName = nameMatch[1];
+        const enName = nameMatch[2];
+        const jpClass = jpName.length >= 13 ? 'focus-name-jp long' : 'focus-name-jp';
+        const enClass = enName.length >= 21 ? 'focus-name-en long' : 'focus-name-en';
+        nameHtml = `<span class="${jpClass}">${jpName}</span><span class="${enClass}">(${enName})${badgeHtml}</span>`;
+      } else {
+        nameHtml = gemResult.name + badgeHtml;
+      }
+
       focusName.innerHTML = nameHtml;
       focusName.style.color = gemResult.isKuzu ? '#a99a86' : '#d4af37';
       focusCarat.textContent = `${gemResult.carat} ct`;
