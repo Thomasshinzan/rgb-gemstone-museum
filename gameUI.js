@@ -1,4 +1,4 @@
-import { state, RANK_DATA, saveData, ALCHEMY_XP_TABLE, ALCHEMY_MAX_LEVEL } from './gameState.js';
+import { state, RANK_DATA, saveData, ALCHEMY_XP_TABLE, ALCHEMY_MAX_LEVEL, FUSION_OPS, getFusionOp } from './gameState.js';
 
 export function showScreen(screenEl) {
   document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
@@ -532,10 +532,52 @@ export function renderLab() {
   const labTitle = document.getElementById('lab-title');
   if (labTitle) labTitle.textContent = isToho ? '東方の錬金術室' : '錬金術室';
   const labDesc = document.getElementById('lab-desc');
+  const curOp = getFusionOp(state.labOp);
+  const curFee = isToho ? curOp.feeToho : curOp.feeNormal;
   if (labDesc) {
     labDesc.innerHTML = isToho
-      ? '東方貿易のクズ石を混ぜ合わせ、東方の宝石を錬成します。<br><span style="font-size: 0.9rem;">(費用: 10,000 G / 期間: 5秒 / 錬成した宝石は王家に献上されます)</span>'
-      : '2つのクズ石を混ぜ合わせ、新たな宝石を錬成します。<br><span style="font-size: 0.9rem;">(費用: 無料 / 期間: 5秒 / 成功時は工房へ送られます)</span>';
+      ? `東方貿易のクズ石を混ぜ合わせ、東方の宝石を錬成します。<br><span style="font-size: 0.9rem;">(手数料: ${curFee.toLocaleString()} G / 期間: 5秒 / 錬成した宝石は王家に献上されます)</span>`
+      : `2つのクズ石を混ぜ合わせ、新たな宝石を錬成します。<br><span style="font-size: 0.9rem;">(手数料: ${curFee.toLocaleString()} G / 期間: 5秒 / 成功時は工房へ送られます)</span>`;
+  }
+
+  // 融合の演算（錬成方法）セレクタ: 錬金術レベルで段階解放
+  const opBtns = document.getElementById('lab-op-buttons');
+  if (opBtns) {
+    opBtns.innerHTML = '';
+    FUSION_OPS.forEach(op => {
+      const unlocked = state.alchemyLevel >= op.unlockLevel;
+      const btn = document.createElement('button');
+      btn.className = 'lab-op-btn';
+      btn.dataset.op = op.id;
+      btn.style.flex = '1';
+      btn.style.padding = '9px 4px';
+      btn.style.borderRadius = '8px';
+      btn.style.fontSize = '0.95rem';
+      if (!unlocked) {
+        btn.textContent = `${op.name} 🔒Lv.${op.unlockLevel}`;
+        btn.style.background = 'linear-gradient(to bottom, #2c241c, #201913)';
+        btn.style.color = '#6f6152';
+        btn.style.border = '2px solid #453723';
+        btn.style.opacity = '0.75';
+      } else if (curOp.id === op.id) {
+        btn.textContent = op.name;
+        btn.style.background = 'linear-gradient(to bottom, #6a4a8b, #452a5e)';
+        btn.style.color = '#f0e6ff';
+        btn.style.border = '2px solid #b48be0';
+        btn.addEventListener('click', () => { state.labOp = op.id; renderLab(); });
+      } else {
+        btn.textContent = op.name;
+        btn.style.background = 'linear-gradient(to bottom, #3d2f22, #2a2018)';
+        btn.style.color = '#c4b5a2';
+        btn.style.border = '2px solid #5c4734';
+        btn.addEventListener('click', () => { state.labOp = op.id; renderLab(); });
+      }
+      opBtns.appendChild(btn);
+    });
+  }
+  const opDesc = document.getElementById('lab-op-desc');
+  if (opDesc) {
+    opDesc.textContent = `【${curOp.name}】${curOp.formula} ／ 手数料 ${curFee.toLocaleString()} G`;
   }
   const tohoUi = document.getElementById('lab-toho-ui');
   if (tohoUi) tohoUi.style.display = isToho ? 'block' : 'none';
@@ -573,7 +615,7 @@ export function renderLab() {
       const avgG = Math.floor((gA.g + gB.g) / 2);
       const avgB = Math.floor((gA.b + gB.b) / 2);
       selectionInfo.innerHTML = `予想RGB: (<span style="color:#ff8888">${avgR}</span>, <span style="color:#88ff88">${avgG}</span>, <span style="color:#8888ff">${avgB}</span>)`;
-      btnFusion.textContent = isToho ? '⚗️ 融合する (10,000 G)' : '⚗️ 融合する';
+      btnFusion.textContent = `⚗️ 融合する (${curFee.toLocaleString()} G)`;
       btnFusion.style.display = 'inline-block';
     } else {
       selectionInfo.textContent = 'クズ石を2つ選択してください';

@@ -1,4 +1,4 @@
-import { state, RANK_DATA, saveData, loadSaveData, BOOK_PRICE, TOHO_FUSION_FEE, TOHO_KUZU_UNIT_PRICE, TOHO_LAB_CAP } from './gameState.js';
+import { state, RANK_DATA, saveData, loadSaveData, BOOK_PRICE, TOHO_KUZU_UNIT_PRICE, TOHO_LAB_CAP, getFusionOp } from './gameState.js';
 import { 
   showScreen, showCustomAlert, updateShopUI, renderZukan, 
   checkNobleQuest, checkCountessQuest, updateMineMenuUI, 
@@ -239,11 +239,19 @@ document.getElementById('btn-collect-craft').addEventListener('click', () => {
 });
 
 document.getElementById('btn-start-fusion').addEventListener('click', () => {
-  if (state.labMode === 'toho') {
+  const isToho = state.labMode === 'toho';
+  const op = getFusionOp(state.labOp);
+  if (state.alchemyLevel < op.unlockLevel) {
+    showCustomAlert(`「${op.name}」は錬金術Lv.${op.unlockLevel}で解放されます。<br>（現在の錬金術Lv.${state.alchemyLevel}）`);
+    return;
+  }
+  const fee = isToho ? op.feeToho : op.feeNormal;
+
+  if (isToho) {
     const selectedIndexes = state.tohoLabSelection || [];
     if (selectedIndexes.length !== 2) return;
-    if (state.money < TOHO_FUSION_FEE) {
-      showCustomAlert(`資金が足りません。<br>東方の錬成には手数料 <b>${TOHO_FUSION_FEE.toLocaleString()} G</b> が必要です（あと <b>${(TOHO_FUSION_FEE - state.money).toLocaleString()} G</b>）。`);
+    if (state.money < fee) {
+      showCustomAlert(`資金が足りません。<br>東方の錬成（${op.name}）には手数料 <b>${fee.toLocaleString()} G</b> が必要です（あと <b>${(fee - state.money).toLocaleString()} G</b>）。`);
       return;
     }
     
@@ -254,18 +262,22 @@ document.getElementById('btn-start-fusion').addEventListener('click', () => {
     state.tohoLabInventory.splice(indices[0], 1);
     state.tohoLabInventory.splice(indices[1], 1);
     state.tohoLabSelection = []; 
-    state.money -= TOHO_FUSION_FEE;
+    state.money -= fee;
     
     saveData();
     updateShopUI();
     renderLab(); 
     
-    startTohoFusionProcess(gemA, gemB);
+    startTohoFusionProcess(gemA, gemB, op.id);
     return;
   }
 
   const selectedIndexes = state.labSelection || [];
   if (selectedIndexes.length !== 2) return;
+  if (state.money < fee) {
+    showCustomAlert(`資金が足りません。<br>融合（${op.name}）には手数料 <b>${fee.toLocaleString()} G</b> が必要です（あと <b>${(fee - state.money).toLocaleString()} G</b>）。`);
+    return;
+  }
   
   const indices = [...selectedIndexes].sort((a, b) => b - a);
   const gemA = state.labInventory[indices[0]];
@@ -274,11 +286,13 @@ document.getElementById('btn-start-fusion').addEventListener('click', () => {
   state.labInventory.splice(indices[0], 1);
   state.labInventory.splice(indices[1], 1);
   state.labSelection = []; 
+  state.money -= fee;
   
   saveData();
+  updateShopUI();
   renderLab(); 
   
-  startFusionProcess(gemA, gemB);
+  startFusionProcess(gemA, gemB, op.id);
 });
 
 // --- 東方の錬金術書の購入 ---
