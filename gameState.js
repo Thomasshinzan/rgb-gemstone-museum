@@ -10,6 +10,7 @@ export const RANK_DATA = [
 export const ALCHEMY_MAX_LEVEL = 12;
 // 錬金術レベル n → n+1 に必要なXP（Lv2到達で東方の錬金術書の発見イベント）
 export const ALCHEMY_XP_TABLE = { 1: 150, 2: 750, 3: 850, 4: 950, 5: 1150, 6: 1300, 7: 1450, 8: 1900, 9: 2300, 10: 2700, 11: 3200 };
+export const BOOK_PRICE = 5000000;
 
 export const state = {
   money: 15000,
@@ -17,6 +18,7 @@ export const state = {
   alchemyLevel: 1,
   alchemyXP: 0,
   bookDiscovered: false,
+  bookObtained: false,
   employees: 0,
   nobleQuestState: 0,
   countessQuestState: 0,
@@ -55,6 +57,7 @@ export function saveData() {
   localStorage.setItem('rgbMiner_alchemyLevel', state.alchemyLevel.toString());
   localStorage.setItem('rgbMiner_alchemyXP', state.alchemyXP.toString());
   localStorage.setItem('rgbMiner_bookDiscovered', state.bookDiscovered ? "1" : "0");
+  localStorage.setItem('rgbMiner_bookObtained', state.bookObtained ? "1" : "0");
   localStorage.setItem('rgbMiner_shopRank', state.shopRank.toString());
   localStorage.setItem('rgbMiner_nobleQuestState', state.nobleQuestState.toString());
   localStorage.setItem('rgbMiner_countessQuestState', state.countessQuestState.toString());
@@ -88,6 +91,7 @@ export function loadSaveData() {
   const savedAlchemyXP = localStorage.getItem('rgbMiner_alchemyXP');
   if (savedAlchemyXP !== null) state.alchemyXP = parseInt(savedAlchemyXP, 10);
   if (localStorage.getItem('rgbMiner_bookDiscovered') === "1") state.bookDiscovered = true;
+  if (localStorage.getItem('rgbMiner_bookObtained') === "1") state.bookObtained = true;
 
   const savedRank = localStorage.getItem('rgbMiner_shopRank');
   if (savedRank !== null) state.shopRank = parseInt(savedRank, 10);

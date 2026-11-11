@@ -1,4 +1,4 @@
-import { state, RANK_DATA, saveData, loadSaveData } from './gameState.js';
+import { state, RANK_DATA, saveData, loadSaveData, BOOK_PRICE } from './gameState.js';
 import { 
   showScreen, showCustomAlert, updateShopUI, renderZukan, 
   checkNobleQuest, checkCountessQuest, updateMineMenuUI, 
@@ -204,6 +204,33 @@ document.getElementById('btn-start-fusion').addEventListener('click', () => {
   startFusionProcess(gemA, gemB);
 });
 
+// --- 東方の錬金術書の購入 ---
+document.getElementById('btn-buy-book').addEventListener('click', () => {
+  if (!state.bookDiscovered || state.bookObtained) return;
+  if (state.money < BOOK_PRICE) {
+    showCustomAlert(`資金が足りません。<br>錬金術書の対価は <b>${BOOK_PRICE.toLocaleString()} G</b> です（あと <b>${(BOOK_PRICE - state.money).toLocaleString()} G</b>）。`);
+    return;
+  }
+  document.getElementById('book-confirm-msg').innerHTML =
+    `発見した東方の錬金術書には封印がかけられています。<br>解くための対価は <b style="color:#f4d03f;">${BOOK_PRICE.toLocaleString()} G</b>。<br><br>所持金: ${state.money.toLocaleString()} G<br>購入後: ${(state.money - BOOK_PRICE).toLocaleString()} G`;
+  document.getElementById('book-confirm-overlay').style.display = 'flex';
+});
+
+document.getElementById('book-confirm-no').addEventListener('click', () => {
+  document.getElementById('book-confirm-overlay').style.display = 'none';
+});
+
+document.getElementById('book-confirm-yes').addEventListener('click', () => {
+  document.getElementById('book-confirm-overlay').style.display = 'none';
+  if (state.bookObtained || state.money < BOOK_PRICE) return;
+  state.money -= BOOK_PRICE;
+  state.bookObtained = true;
+  updateShopUI();
+  saveData();
+  renderLab();
+  showCustomAlert(`📖 <b>東方の錬金術書を手に入れました！</b><br><br>重い封印が解かれ、東方の宝石のレシピが姿を現しました。<br>現在の錬金術レベルで解読できるのは、バッチ${Math.min(state.alchemyLevel, 12)}までのレシピです。<br>錬金術レベルが上がれば、さらに多くのレシピを解読できるでしょう。<br><br>東方の宝石の錬成に向け、錬金術室の準備が始まります。`);
+});
+
 // --- 採掘のイベントバインディング ---
 document.getElementById('btn-buy-mine').addEventListener('click', () => {
   const MINE_COST = 100000;
@@ -273,6 +300,7 @@ document.getElementById('confirm-yes-btn').addEventListener('click', () => {
   state.alchemyLevel = 1;
   state.alchemyXP = 0;
   state.bookDiscovered = false;
+  state.bookObtained = false;
   state.employees = 0;
   state.nobleQuestState = 0;
   state.countessQuestState = 0;
@@ -301,6 +329,7 @@ document.getElementById('btn-export-save').addEventListener('click', () => {
     alchemyLevel: state.alchemyLevel,
     alchemyXP: state.alchemyXP,
     bookDiscovered: state.bookDiscovered,
+    bookObtained: state.bookObtained,
     nobleQuestState: state.nobleQuestState, 
     countessQuestState: state.countessQuestState, 
     neighborTradeUnlocked: state.neighborTradeUnlocked,
@@ -339,6 +368,7 @@ document.getElementById('btn-do-import').addEventListener('click', () => {
     state.alchemyLevel = saveObj.alchemyLevel || 1;
     state.alchemyXP = saveObj.alchemyXP || 0;
     state.bookDiscovered = saveObj.bookDiscovered || false;
+    state.bookObtained = saveObj.bookObtained || false;
     state.nobleQuestState = saveObj.nobleQuestState || 0;
     state.countessQuestState = saveObj.countessQuestState || 0;
     state.neighborTradeUnlocked = saveObj.neighborTradeUnlocked || false;
