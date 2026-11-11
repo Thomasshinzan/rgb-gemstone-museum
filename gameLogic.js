@@ -318,7 +318,20 @@ function setupAppraisalRoom(gemCount, poolType = 'mineId1') {
   };
 }
 
-export function startFusionProcess(gemA, gemB) {
+// 選択された演算で2つのクズ石から融合点のRGBを求める
+export function computeFusionRGB(gemA, gemB, opId) {
+  const ch = (a, b) => {
+    switch (opId) {
+      case 'diff': return Math.abs(a - b);
+      case 'rss': return Math.min(255, Math.round(Math.sqrt(a * a + b * b)));
+      case 'sum': return Math.min(255, a + b);
+      default: return Math.floor((a + b) / 2);
+    }
+  };
+  return { r: ch(gemA.r, gemB.r), g: ch(gemA.g, gemB.g), b: ch(gemA.b, gemB.b) };
+}
+
+export function startFusionProcess(gemA, gemB, opId) {
   const overlay = document.getElementById('fusion-progress-overlay');
   overlay.style.display = 'flex';
   
@@ -335,9 +348,7 @@ export function startFusionProcess(gemA, gemB) {
       clearInterval(timer);
       overlay.style.display = 'none';
       
-      const avgR = Math.floor((gemA.r + gemB.r) / 2);
-      const avgG = Math.floor((gemA.g + gemB.g) / 2);
-      const avgB = Math.floor((gemA.b + gemB.b) / 2);
+      const { r: avgR, g: avgG, b: avgB } = computeFusionRGB(gemA, gemB, opId);
       
       let pool = [];
       for (const key in appraiser.gemData) {
@@ -474,7 +485,7 @@ export function startFusionProcess(gemA, gemB) {
 }
 
 // --- 東方の宝石の専用融合 ---
-export function startTohoFusionProcess(gemA, gemB) {
+export function startTohoFusionProcess(gemA, gemB, opId) {
   const overlay = document.getElementById('fusion-progress-overlay');
   overlay.style.display = 'flex';
   
@@ -491,9 +502,7 @@ export function startTohoFusionProcess(gemA, gemB) {
       clearInterval(timer);
       overlay.style.display = 'none';
       
-      const avgR = Math.floor((gemA.r + gemB.r) / 2);
-      const avgG = Math.floor((gemA.g + gemB.g) / 2);
-      const avgB = Math.floor((gemA.b + gemB.b) / 2);
+      const { r: avgR, g: avgG, b: avgB } = computeFusionRGB(gemA, gemB, opId);
       
       // 解読済みバッチ（錬金術レベル以下）の色だけが錬成対象。未解放の色はクズ石判定になる
       const pool = appraiser.tohoGemData.filter(gem => gem.level <= state.alchemyLevel);

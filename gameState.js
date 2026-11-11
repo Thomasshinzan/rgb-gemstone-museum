@@ -11,8 +11,22 @@ export const ALCHEMY_MAX_LEVEL = 12;
 // 錬金術レベル n → n+1 に必要なXP（Lv2到達で東方の錬金術書の発見イベント）
 export const ALCHEMY_XP_TABLE = { 1: 150, 2: 750, 3: 850, 4: 950, 5: 1150, 6: 1300, 7: 1450, 8: 1900, 9: 2300, 10: 2700, 11: 3200 };
 export const BOOK_PRICE = 5000000;
-export const TOHO_FUSION_FEE = 10000;
 export const TOHO_TOLERANCE_SCALE = 0.75;
+// 融合の演算（錬成方法）。錬金術レベルで段階解放され、手数料はモードごとに異なる。
+// 融合は図鑑コンプリートの手段であり、資金稼ぎにはならない（むしろ資金が減る）設計
+export const FUSION_OPS = [
+  { id: 'mix',  name: '混合', unlockLevel: 1, feeNormal: 2000, feeToho: 10000, formula: '2つのRGBの平均' },
+  { id: 'diff', name: '分離', unlockLevel: 3, feeNormal: 2000, feeToho: 15000, formula: '2つのRGBの差の絶対値' },
+  { id: 'rss',  name: '昇華', unlockLevel: 5, feeNormal: 3500, feeToho: 20000, formula: '2つのRGBの二乗和の平方根（上限255）' },
+  { id: 'sum',  name: '蒸溜', unlockLevel: 7, feeNormal: 4000, feeToho: 30000, formula: '2つのRGBの和（上限255）' },
+];
+export function getFusionOp(id) {
+  return FUSION_OPS.find(o => o.id === id) || FUSION_OPS[0];
+}
+export function currentFusionFee(isToho) {
+  const op = getFusionOp(state.labOp);
+  return isToho ? op.feeToho : op.feeNormal;
+}
 export const TOHO_KUZU_UNIT_PRICE = 1000;
 export const TOHO_LAB_CAP = 20;
 
@@ -25,6 +39,7 @@ export const state = {
   bookObtained: false,
   endingSeen: false,
   labMode: 'normal',
+  labOp: 'mix',
   tohoLabInventory: [],   // 東方融合用のクズ石（通常分とは完全分離）
   tohoLabSelection: [],
   tohoZukanData: {},      // 東方の宝石の色図鑑（別冊）
