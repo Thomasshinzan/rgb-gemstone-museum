@@ -585,7 +585,7 @@ export function renderLab() {
 
   if (inv.length === 0) {
     listContainer.innerHTML = isToho
-      ? '<p style="color: #a99a86; font-size: 0.9rem; padding: 20px;">東方のクズ石がありません。「クズ石の購入」から仕入れてください。</p>'
+      ? '<p style="color: #a99a86; font-size: 0.9rem; padding: 20px;">東方のクズ石がありません。「クズ石の補充」から仕入れてください。</p>'
       : '<p style="color: #a99a86; font-size: 0.9rem; padding: 20px;">実験室にクズ石がありません。</p>';
   } else {
     inv.forEach((gem, index) => {

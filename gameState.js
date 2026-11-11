@@ -12,8 +12,7 @@ export const ALCHEMY_MAX_LEVEL = 12;
 export const ALCHEMY_XP_TABLE = { 1: 150, 2: 750, 3: 850, 4: 950, 5: 1150, 6: 1300, 7: 1450, 8: 1900, 9: 2300, 10: 2700, 11: 3200 };
 export const BOOK_PRICE = 5000000;
 export const TOHO_FUSION_FEE = 10000;
-export const TOHO_KUZU_PRICE = 20000;
-export const TOHO_KUZU_COUNT = 20;
+export const TOHO_KUZU_UNIT_PRICE = 1000;
 export const TOHO_LAB_CAP = 20;
 
 export const state = {
