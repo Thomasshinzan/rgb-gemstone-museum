@@ -1,4 +1,4 @@
-import { state, RANK_DATA, saveData, loadSaveData, BOOK_PRICE, TOHO_FUSION_FEE, TOHO_KUZU_PRICE, TOHO_KUZU_COUNT } from './gameState.js';
+import { state, RANK_DATA, saveData, loadSaveData, BOOK_PRICE, TOHO_FUSION_FEE, TOHO_KUZU_UNIT_PRICE, TOHO_LAB_CAP } from './gameState.js';
 import { 
   showScreen, showCustomAlert, updateShopUI, renderZukan, 
   checkNobleQuest, checkCountessQuest, updateMineMenuUI, 
@@ -133,24 +133,28 @@ document.getElementById('lab-mode-toho').addEventListener('click', () => {
   renderLab();
 });
 
-// --- 東方のクズ石の購入（東方貿易） ---
+// --- 東方のクズ石の補充（東方貿易、1個 1,000 G の補充式） ---
 document.getElementById('btn-buy-kuzu').addEventListener('click', () => {
-  if (state.tohoLabInventory.length > 0) {
-    showCustomAlert(`東方のクズ石は ${TOHO_KUZU_COUNT} 個セットの仕入れです。<br>まず今の在庫（${state.tohoLabInventory.length} 個）を使い切ってください。`);
+  const room = TOHO_LAB_CAP - state.tohoLabInventory.length;
+  if (room <= 0) {
+    showCustomAlert(`東方のクズ石は満杯です（${TOHO_LAB_CAP} 個まで）。`);
     return;
   }
-  if (state.money < TOHO_KUZU_PRICE) {
-    showCustomAlert(`資金が足りません。<br>クズ石の仕入れには <b>${TOHO_KUZU_PRICE.toLocaleString()} G</b> 必要です（あと <b>${(TOHO_KUZU_PRICE - state.money).toLocaleString()} G</b>）。`);
+  const affordable = Math.floor(state.money / TOHO_KUZU_UNIT_PRICE);
+  if (affordable <= 0) {
+    showCustomAlert(`資金が足りません。<br>クズ石の補充には1個 <b>${TOHO_KUZU_UNIT_PRICE.toLocaleString()} G</b> が必要です（あと <b>${(TOHO_KUZU_UNIT_PRICE - state.money).toLocaleString()} G</b>）。`);
     return;
   }
-  state.money -= TOHO_KUZU_PRICE;
-  for (let i = 0; i < TOHO_KUZU_COUNT; i++) {
+  const count = Math.min(room, affordable);
+  const cost = count * TOHO_KUZU_UNIT_PRICE;
+  state.money -= cost;
+  for (let i = 0; i < count; i++) {
     state.tohoLabInventory.push({ ...appraiser.createKuzu(), acquiredAt: Date.now() + i });
   }
   saveData();
   updateShopUI();
   renderLab();
-  showCustomAlert(`🚢 <b>東方貿易の船が到着しました！</b><br><br>クズ石 <b>${TOHO_KUZU_COUNT} 個</b> を仕入れました（${TOHO_KUZU_PRICE.toLocaleString()} G）。<br>東方の錬金術室で融合に使えます。`);
+  showCustomAlert(`🚢 <b>東方貿易の船が到着しました！</b><br><br>クズ石 <b>${count} 個</b> を補充しました（${cost.toLocaleString()} G）。<br>在庫: ${state.tohoLabInventory.length} / ${TOHO_LAB_CAP} 個`);
 });
 
 // --- 色図鑑（別冊） ---
