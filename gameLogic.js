@@ -521,7 +521,11 @@ export function startTohoFusionProcess(gemA, gemB) {
 
       if (matchedGems.length > 0) {
         matchedGems.sort((a, b) => a.dist - b.dist);
-        const hitMatch = matchedGems[0];
+        // 距離が完全に同点の候補（RGB完全一致の色同士など）はランダムに選ぶ。
+        // これにより同点ペアの片方だけが永遠に選ばれ続けることがなくなる
+        const bestDist = matchedGems[0].dist;
+        const tied = matchedGems.filter(m => m.dist === bestDist);
+        const hitMatch = tied[Math.floor(Math.random() * tied.length)];
         const hitGem = hitMatch.gem;
         
         const avgCarat = (parseFloat(gemA.carat) + parseFloat(gemB.carat)) / 2;
