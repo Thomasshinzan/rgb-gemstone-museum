@@ -3,7 +3,7 @@ import { state, saveData, grantAlchemyXP } from './gameState.js';
 import { 
   showScreen, showCustomAlert, updateShopUI, 
   checkNobleQuest, checkCountessQuest, renderLab,
-  checkMineUpgradeQuest
+  checkMineUpgradeQuest, checkEnding
 } from './gameUI.js';
 
 export const appraiser = new Appraiser();
@@ -153,7 +153,8 @@ function setupAppraisalRoom(gemCount, poolType = 'mineId1') {
             zEntry.bestClarity = gemResult.clarity;
           }
           saveData(); 
-          checkNobleQuest(); 
+          checkNobleQuest();
+          checkEnding();
         }
 
         if (revealedCount === gemCount && !allRevealed) {
@@ -418,9 +419,10 @@ export function startFusionProcess(gemA, gemB) {
           zEntry.bestClarity = newClarity;
         }
 
-        // 錬金術XP: 基礎 = カラット × 純度 ÷ 10。新規登録 ×1 / 登録済み ×2 / 最高純度更新 ×3
+        // 錬金術XP: 基礎 = カラット × 純度 ÷ 2（クズ石のカラットは 0.1〜0.6 と小さいため）。
+        // 新規登録 ×1 / 登録済み ×2 / 最高純度更新 ×3
         const xpMult = isNew ? 1 : (newPurity > prevMaxPurity ? 3 : 2);
-        const xpGain = Math.max(1, Math.round(parseFloat(newCarat) * newPurity / 10)) * xpMult;
+        const xpGain = Math.max(1, Math.round(parseFloat(newCarat) * newPurity / 2)) * xpMult;
         const xpEvents = grantAlchemyXP(xpGain);
         
         let msg = `✨ <b>融合成功！</b><br><br>見事な <b>${hitGem.name}</b> が誕生しました！`;
@@ -466,6 +468,113 @@ export function startFusionProcess(gemA, gemB) {
       }
       
       renderLab();
+      checkEnding();
+    }
+  }, 100);
+}
+
+// --- 東方の宝石の専用融合 ---
+export function startTohoFusionProcess(gemA, gemB) {
+  const overlay = document.getElementById('fusion-progress-overlay');
+  overlay.style.display = 'flex';
+  
+  const progBar = document.getElementById('fusion-progress-bar');
+  progBar.value = 0;
+  progBar.max = 50; 
+  
+  let ticks = 0;
+  const timer = setInterval(() => {
+    ticks++;
+    progBar.value = ticks;
+    
+    if (ticks >= 50) {
+      clearInterval(timer);
+      overlay.style.display = 'none';
+      
+      const avgR = Math.floor((gemA.r + gemB.r) / 2);
+      const avgG = Math.floor((gemA.g + gemB.g) / 2);
+      const avgB = Math.floor((gemA.b + gemB.b) / 2);
+      
+      // 解読済みバッチ（錬金術レベル以下）の色だけが錬成対象。未解放の色はクズ石判定になる
+      const pool = appraiser.tohoGemData.filter(gem => gem.level <= state.alchemyLevel);
+      
+      const getTolerance = (rarity) => {
+        switch(rarity) {
+          case "Common": return 32;
+          case "Uncommon": return 28;    
+          case "Rare": return 24;      
+          case "Epic": return 16;      
+          case "Legendary": return 8;  
+          default: return 20;
+        }
+      };
+
+      let matchedGems = [];
+      pool.forEach(gem => {
+        const tol = getTolerance(gem.rarity);
+        if (Math.abs(avgR - gem.r) <= tol && Math.abs(avgG - gem.g) <= tol && Math.abs(avgB - gem.b) <= tol) {
+          const dist = Math.sqrt(Math.pow(avgR - gem.r, 2) + Math.pow(avgG - gem.g, 2) + Math.pow(avgB - gem.b, 2));
+          matchedGems.push({ gem, dist, tol });
+        }
+      });
+
+      if (matchedGems.length > 0) {
+        matchedGems.sort((a, b) => a.dist - b.dist);
+        const hitMatch = matchedGems[0];
+        const hitGem = hitMatch.gem;
+        
+        const avgCarat = (parseFloat(gemA.carat) + parseFloat(gemB.carat)) / 2;
+        const newCarat = (avgCarat * (1 + (Math.random() * 0.2))).toFixed(2);
+        
+        const clarities = ["FL", "IF", "VVS", "VS", "SI", "I"];
+        const clarityIndex = Math.floor(Math.random() * Math.random() * clarities.length);
+        const newClarity = clarities[clarities.length - 1 - clarityIndex];
+
+        const maxDist = hitMatch.tol * Math.sqrt(3); 
+        let newPurity = Math.floor(100 - (hitMatch.dist / maxDist) * 50);
+        if (newPurity > 100) newPurity = 100;
+        if (newPurity < 50) newPurity = 50;
+        
+        const zEntry = state.tohoZukanData[hitGem.id];
+        const prevMaxPurity = zEntry.maxPurity;
+        let isNew = false;
+        if (!zEntry.discovered) {
+          isNew = true;
+          zEntry.discovered = true;
+        }
+        if (newPurity > zEntry.maxPurity) {
+          zEntry.maxPurity = newPurity;
+          zEntry.bestCarat = newCarat;
+          zEntry.bestClarity = newClarity;
+        }
+
+        // 錬金術XP（通常融合と同じ式・倍率）
+        const xpMult = isNew ? 1 : (newPurity > prevMaxPurity ? 3 : 2);
+        const xpGain = Math.max(1, Math.round(parseFloat(newCarat) * newPurity / 2)) * xpMult;
+        const xpEvents = grantAlchemyXP(xpGain);
+        
+        let msg = `✨ <b>錬成成功！</b><br><br>見事な <b>${hitGem.name}</b> が誕生しました！`;
+        if (isNew) msg += `<span class="badge-new">New!!</span>`;
+        msg += `<br><br>完成した宝石は、色図鑑（別冊）に登録され、<b>王家に献上されました</b>。`;
+        const xpMultLabel = xpMult === 3 ? '（最高純度更新ボーナス ×3）' : (xpMult === 2 ? '（図鑑登録済みボーナス ×2）' : '');
+        msg += `<br><br>⚗️ <b>錬金術XP +${xpGain}</b>${xpMultLabel}`;
+        for (const lv of xpEvents.levelsGained) {
+          msg += `<br>🎉 <b>錬金術レベルが ${lv} に上がりました！</b><br>東方の錬金術書のバッチ${lv}が解読できるようになりました。`;
+        }
+        
+        saveData();
+        showCustomAlert(msg, true);
+      } else {
+        const newKuzu = appraiser.createKuzu(avgR, avgG, avgB);
+        newKuzu.carat = ((parseFloat(gemA.carat) + parseFloat(gemB.carat)) / 2).toFixed(2);
+        
+        state.tohoLabInventory.push({ ...newKuzu, acquiredAt: Date.now() });
+        saveData();
+        showCustomAlert(`💨 <b>錬成失敗...</b><br><br>どの色にも変化せず、新たな色の「クズ石」になりました。<br>東方の在庫に戻しておきます。`, true);
+      }
+      
+      renderLab();
+      checkEnding();
     }
   }, 100);
 }

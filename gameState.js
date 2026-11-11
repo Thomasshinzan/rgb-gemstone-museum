@@ -11,6 +11,10 @@ export const ALCHEMY_MAX_LEVEL = 12;
 // 錬金術レベル n → n+1 に必要なXP（Lv2到達で東方の錬金術書の発見イベント）
 export const ALCHEMY_XP_TABLE = { 1: 150, 2: 750, 3: 850, 4: 950, 5: 1150, 6: 1300, 7: 1450, 8: 1900, 9: 2300, 10: 2700, 11: 3200 };
 export const BOOK_PRICE = 5000000;
+export const TOHO_FUSION_FEE = 10000;
+export const TOHO_KUZU_PRICE = 20000;
+export const TOHO_KUZU_COUNT = 20;
+export const TOHO_LAB_CAP = 20;
 
 export const state = {
   money: 15000,
@@ -19,6 +23,11 @@ export const state = {
   alchemyXP: 0,
   bookDiscovered: false,
   bookObtained: false,
+  endingSeen: false,
+  labMode: 'normal',
+  tohoLabInventory: [],   // 東方融合用のクズ石（通常分とは完全分離）
+  tohoLabSelection: [],
+  tohoZukanData: {},      // 東方の宝石の色図鑑（別冊）
   employees: 0,
   nobleQuestState: 0,
   countessQuestState: 0,
@@ -58,6 +67,19 @@ export function saveData() {
   localStorage.setItem('rgbMiner_alchemyXP', state.alchemyXP.toString());
   localStorage.setItem('rgbMiner_bookDiscovered', state.bookDiscovered ? "1" : "0");
   localStorage.setItem('rgbMiner_bookObtained', state.bookObtained ? "1" : "0");
+  localStorage.setItem('rgbMiner_endingSeen', state.endingSeen ? "1" : "0");
+  localStorage.setItem('rgbMiner_tohoLabInventory', JSON.stringify(state.tohoLabInventory));
+
+  const tohoZukanToSave = {};
+  for (const key in state.tohoZukanData) {
+    tohoZukanToSave[key] = {
+      discovered: state.tohoZukanData[key].discovered,
+      maxPurity: state.tohoZukanData[key].maxPurity,
+      bestCarat: state.tohoZukanData[key].bestCarat,
+      bestClarity: state.tohoZukanData[key].bestClarity
+    };
+  }
+  localStorage.setItem('rgbMiner_tohoZukan', JSON.stringify(tohoZukanToSave));
   localStorage.setItem('rgbMiner_shopRank', state.shopRank.toString());
   localStorage.setItem('rgbMiner_nobleQuestState', state.nobleQuestState.toString());
   localStorage.setItem('rgbMiner_countessQuestState', state.countessQuestState.toString());
@@ -92,6 +114,23 @@ export function loadSaveData() {
   if (savedAlchemyXP !== null) state.alchemyXP = parseInt(savedAlchemyXP, 10);
   if (localStorage.getItem('rgbMiner_bookDiscovered') === "1") state.bookDiscovered = true;
   if (localStorage.getItem('rgbMiner_bookObtained') === "1") state.bookObtained = true;
+  if (localStorage.getItem('rgbMiner_endingSeen') === "1") state.endingSeen = true;
+
+  const savedTohoLabInventory = localStorage.getItem('rgbMiner_tohoLabInventory');
+  if (savedTohoLabInventory) state.tohoLabInventory = JSON.parse(savedTohoLabInventory);
+
+  const savedTohoZukan = localStorage.getItem('rgbMiner_tohoZukan');
+  if (savedTohoZukan) {
+    const parsedToho = JSON.parse(savedTohoZukan);
+    for (const key in parsedToho) {
+      if (state.tohoZukanData[key]) {
+        state.tohoZukanData[key].discovered = parsedToho[key].discovered;
+        state.tohoZukanData[key].maxPurity = parsedToho[key].maxPurity || 0;
+        state.tohoZukanData[key].bestCarat = parsedToho[key].bestCarat || 0;
+        state.tohoZukanData[key].bestClarity = parsedToho[key].bestClarity || '-';
+      }
+    }
+  }
 
   const savedRank = localStorage.getItem('rgbMiner_shopRank');
   if (savedRank !== null) state.shopRank = parseInt(savedRank, 10);
