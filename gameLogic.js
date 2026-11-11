@@ -1,5 +1,5 @@
 import { Appraiser } from './appraiser.js';
-import { state, saveData, grantAlchemyXP } from './gameState.js';
+import { state, saveData, grantAlchemyXP, TOHO_TOLERANCE_SCALE } from './gameState.js';
 import { 
   showScreen, showCustomAlert, updateShopUI, 
   checkNobleQuest, checkCountessQuest, renderLab,
@@ -498,14 +498,15 @@ export function startTohoFusionProcess(gemA, gemB) {
       // 解読済みバッチ（錬金術レベル以下）の色だけが錬成対象。未解放の色はクズ石判定になる
       const pool = appraiser.tohoGemData.filter(gem => gem.level <= state.alchemyLevel);
       
+      // 東方の宝石は従来より発見の幅を狭くする（許容範囲 × TOHO_TOLERANCE_SCALE）
       const getTolerance = (rarity) => {
         switch(rarity) {
-          case "Common": return 32;
-          case "Uncommon": return 28;    
-          case "Rare": return 24;      
-          case "Epic": return 16;      
-          case "Legendary": return 8;  
-          default: return 20;
+          case "Common": return 32 * TOHO_TOLERANCE_SCALE;
+          case "Uncommon": return 28 * TOHO_TOLERANCE_SCALE;    
+          case "Rare": return 24 * TOHO_TOLERANCE_SCALE;      
+          case "Epic": return 16 * TOHO_TOLERANCE_SCALE;      
+          case "Legendary": return 8 * TOHO_TOLERANCE_SCALE;  
+          default: return 20 * TOHO_TOLERANCE_SCALE;
         }
       };
 
