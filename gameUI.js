@@ -167,6 +167,109 @@ export function checkCountessQuest() {
   }
 }
 
+export function renderTohoZukan() {
+  const container = document.getElementById('toho-zukan-list-container');
+  container.innerHTML = '';
+
+  const focusVisual = document.getElementById('toho-zukan-focus-visual');
+  const focusName = document.getElementById('toho-zukan-focus-name');
+  const focusInfo = document.getElementById('toho-zukan-focus-info');
+  focusVisual.className = 'focus-gem empty';
+  focusVisual.style.backgroundColor = '';
+  focusName.textContent = '色を選択してください';
+  focusName.style.color = '#fff';
+  focusInfo.textContent = '目標色: ---';
+
+  let discoveredCount = 0;
+  const total = Object.keys(state.tohoZukanData).length;
+
+  for (let lv = 1; lv <= 12; lv++) {
+    const entries = Object.values(state.tohoZukanData).filter(e => e.ref.level === lv);
+    if (entries.length === 0) continue;
+    const unlocked = lv <= state.alchemyLevel;
+    const disc = entries.filter(e => e.discovered).length;
+    discoveredCount += disc;
+
+    const section = document.createElement('div');
+    section.className = 'rarity-section';
+    section.style.background = 'radial-gradient(circle at 50% 50%, #1d2b3a 0%, #0a1017 100%)';
+
+    const header = document.createElement('div');
+    header.className = 'rarity-header';
+    header.style.color = unlocked ? '#9fd0ff' : '#777777';
+    header.textContent = unlocked ? `[バッチ${lv}] 解読済み ${disc} / ${entries.length}` : `[バッチ${lv}] 錬金術Lv.${lv}で解読`;
+    section.appendChild(header);
+
+    if (unlocked) {
+      const grid = document.createElement('div');
+      grid.className = 'rarity-grid';
+      entries.forEach(entry => {
+        const slot = document.createElement('div');
+        slot.className = 'zukan-slot';
+        const gem = entry.ref;
+        const gemEl = document.createElement('div');
+        gemEl.className = 'gem-visual';
+        gemEl.style.backgroundColor = `rgb(${gem.r}, ${gem.g}, ${gem.b})`;
+        if (!entry.discovered) gemEl.style.filter = 'brightness(0.35)';
+        slot.appendChild(gemEl);
+
+        slot.addEventListener('click', () => {
+          focusVisual.className = 'focus-gem';
+          focusVisual.style.backgroundColor = `rgb(${gem.r}, ${gem.g}, ${gem.b})`;
+          const nameMatch = gem.name.match(/^(.*?)\s*\((.*)\)\s*$/);
+          if (nameMatch) {
+            const jpName = nameMatch[1];
+            const enName = nameMatch[2];
+            const jpClass = jpName.length >= 13 ? 'zukan-name-jp long' : 'zukan-name-jp';
+            const enClass = enName.length >= 21 ? 'zukan-name-en long' : 'zukan-name-en';
+            focusName.innerHTML = `<span class="${jpClass}">${jpName}</span><span class="${enClass}">(${enName})</span>`;
+          } else {
+            focusName.textContent = gem.name;
+          }
+          focusName.style.color = '#d4af37';
+
+          let rarityColor = '#e0d5c1';
+          if (gem.rarity === 'Legendary') rarityColor = '#ffaa00';
+          else if (gem.rarity === 'Epic') rarityColor = '#c688ff';
+          else if (gem.rarity === 'Rare') rarityColor = '#55aaff';
+          else if (gem.rarity === 'Uncommon') rarityColor = '#88ff88';
+
+          if (entry.discovered) {
+            focusInfo.innerHTML = `<span style="color:${rarityColor}; margin-right:10px;">[${gem.rarity}]</span>最高純度: ${entry.maxPurity}%<br><span style="font-size:0.8rem; color:#a99a86;">目標RGB: (${gem.r}, ${gem.g}, ${gem.b}) / ${entry.bestCarat} ct / 透明度: ${entry.bestClarity}</span>`;
+          } else {
+            focusInfo.innerHTML = `<span style="color:${rarityColor}; margin-right:10px;">[${gem.rarity}]</span>未錬成<br><span style="font-size:0.8rem; color:#a99a86;">目標RGB: (${gem.r}, ${gem.g}, ${gem.b})</span>`;
+          }
+        });
+        grid.appendChild(slot);
+      });
+      section.appendChild(grid);
+    } else {
+      const p = document.createElement('p');
+      p.style.cssText = 'color: #777777; font-size: 0.9rem; padding: 6px 2px;';
+      p.textContent = `？？？（全${entries.length}色）`;
+      section.appendChild(p);
+    }
+    container.appendChild(section);
+  }
+
+  const progressEl = document.getElementById('toho-zukan-progress');
+  if (progressEl) {
+    progressEl.textContent = `収集率: ${discoveredCount} / ${total}`;
+  }
+}
+
+export function checkEnding() {
+  if (state.endingSeen) return;
+  const mainEntries = Object.values(state.zukanData);
+  const tohoEntries = Object.values(state.tohoZukanData);
+  if (mainEntries.length === 0 || tohoEntries.length === 0) return;
+  if (!mainEntries.every(e => e.discovered)) return;
+  if (!tohoEntries.every(e => e.discovered)) return;
+  state.endingSeen = true;
+  saveData();
+  showCustomAlert(`👑 <b>【エンディング】</b><br><br>王立宝石図録と東方の色図鑑、そのすべてを完成させたあなたは、<br>今や内外から <b>「王国の宝石」</b> と称賛される存在となりました。<br><br>その功績を認められ、<b>王家の末娘である王女との結婚</b>が許されたのです。<br><br>宝石商の物語は、ここに完結しました。<br>――しかし、純度100%の輝きを求める旅は、まだ続いていきます。`, true);
+}
+
 export function updateLongExpeditionUI() {
   const slider = document.getElementById('long-expedition-slider');
   const minutes = parseInt(slider.value, 10);
@@ -405,7 +508,41 @@ export function renderLab() {
   if (btnBuyBook) {
     btnBuyBook.style.display = (state.bookDiscovered && !state.bookObtained) ? 'block' : 'none';
   }
-  document.getElementById('lab-capacity').textContent = `保管状況: ${state.labInventory.length} / 20`;
+
+  // 通常 / 東方モード切替まわりの表示
+  const isToho = state.labMode === 'toho';
+  const inv = isToho ? state.tohoLabInventory : state.labInventory;
+  if (!state.labSelection) state.labSelection = [];
+  if (!state.tohoLabSelection) state.tohoLabSelection = [];
+  let sel = isToho ? state.tohoLabSelection : state.labSelection;
+  const setSel = (v) => { if (isToho) state.tohoLabSelection = v; else state.labSelection = v; sel = v; };
+
+  const tohoWrap = document.getElementById('lab-mode-toho-wrap');
+  if (tohoWrap) tohoWrap.style.display = state.bookObtained ? 'block' : 'none';
+  const modeNormalBtn = document.getElementById('lab-mode-normal');
+  const modeTohoBtn = document.getElementById('lab-mode-toho');
+  const paintModeBtn = (btn, active) => {
+    if (!btn) return;
+    btn.style.background = active ? 'linear-gradient(to bottom, #6a4a8b, #452a5e)' : 'linear-gradient(to bottom, #3d2f22, #2a2018)';
+    btn.style.color = active ? '#f0e6ff' : '#a99a86';
+    btn.style.border = active ? '2px solid #b48be0' : '2px solid #5c4734';
+  };
+  paintModeBtn(modeNormalBtn, !isToho);
+  paintModeBtn(modeTohoBtn, isToho);
+  const labTitle = document.getElementById('lab-title');
+  if (labTitle) labTitle.textContent = isToho ? '東方の錬金術室' : '錬金術室';
+  const labDesc = document.getElementById('lab-desc');
+  if (labDesc) {
+    labDesc.innerHTML = isToho
+      ? '東方貿易のクズ石を混ぜ合わせ、東方の宝石を錬成します。<br><span style="font-size: 0.9rem;">(費用: 10,000 G / 期間: 5秒 / 錬成した宝石は王家に献上されます)</span>'
+      : '2つのクズ石を混ぜ合わせ、新たな宝石を錬成します。<br><span style="font-size: 0.9rem;">(費用: 無料 / 期間: 5秒 / 成功時は工房へ送られます)</span>';
+  }
+  const tohoUi = document.getElementById('lab-toho-ui');
+  if (tohoUi) tohoUi.style.display = isToho ? 'block' : 'none';
+
+  document.getElementById('lab-capacity').textContent = isToho
+    ? `東方のクズ石: ${inv.length} / 20`
+    : `保管状況: ${inv.length} / 20`;
   const listContainer = document.getElementById('lab-inventory-list');
   listContainer.innerHTML = '';
   
@@ -418,26 +555,25 @@ export function renderLab() {
     focusA.className = 'focus-gem empty'; focusA.style.backgroundColor = '';
     focusB.className = 'focus-gem empty'; focusB.style.backgroundColor = '';
     
-    const sel = state.labSelection || [];
-    
-    if (sel.length > 0) {
-      const gemA = state.labInventory[sel[0]];
+    if (sel.length > 0 && inv[sel[0]]) {
+      const gemA = inv[sel[0]];
       focusA.className = 'focus-gem kuzu-focus';
       focusA.style.backgroundColor = `rgb(${gemA.r}, ${gemA.g}, ${gemA.b})`;
     }
-    if (sel.length > 1) {
-      const gemB = state.labInventory[sel[1]];
+    if (sel.length > 1 && inv[sel[1]]) {
+      const gemB = inv[sel[1]];
       focusB.className = 'focus-gem kuzu-focus';
       focusB.style.backgroundColor = `rgb(${gemB.r}, ${gemB.g}, ${gemB.b})`;
     }
 
     if (sel.length === 2) {
-      const gA = state.labInventory[sel[0]];
-      const gB = state.labInventory[sel[1]];
+      const gA = inv[sel[0]];
+      const gB = inv[sel[1]];
       const avgR = Math.floor((gA.r + gB.r) / 2);
       const avgG = Math.floor((gA.g + gB.g) / 2);
       const avgB = Math.floor((gA.b + gB.b) / 2);
       selectionInfo.innerHTML = `予想RGB: (<span style="color:#ff8888">${avgR}</span>, <span style="color:#88ff88">${avgG}</span>, <span style="color:#8888ff">${avgB}</span>)`;
+      btnFusion.textContent = isToho ? '⚗️ 融合する (10,000 G)' : '⚗️ 融合する';
       btnFusion.style.display = 'inline-block';
     } else {
       selectionInfo.textContent = 'クズ石を2つ選択してください';
@@ -445,31 +581,31 @@ export function renderLab() {
     }
   };
 
-  if (!state.labSelection) state.labSelection = [];
-  
-  state.labSelection = state.labSelection.filter(i => i < state.labInventory.length);
+  setSel(sel.filter(i => i < inv.length));
 
-  if (state.labInventory.length === 0) {
-    listContainer.innerHTML = '<p style="color: #a99a86; font-size: 0.9rem; padding: 20px;">実験室にクズ石がありません。</p>';
+  if (inv.length === 0) {
+    listContainer.innerHTML = isToho
+      ? '<p style="color: #a99a86; font-size: 0.9rem; padding: 20px;">東方のクズ石がありません。「クズ石の購入」から仕入れてください。</p>'
+      : '<p style="color: #a99a86; font-size: 0.9rem; padding: 20px;">実験室にクズ石がありません。</p>';
   } else {
-    state.labInventory.forEach((gem, index) => {
+    inv.forEach((gem, index) => {
       const el = document.createElement('div');
       el.className = 'rough-stone kuzu-appraised';
       el.style.backgroundColor = `rgb(${gem.r}, ${gem.g}, ${gem.b})`;
       
-      if (state.labSelection.includes(index)) {
+      if (sel.includes(index)) {
         el.classList.add('gem-kept');
       }
       
       el.addEventListener('click', () => {
-        if (state.labSelection.includes(index)) {
-          state.labSelection = state.labSelection.filter(i => i !== index);
+        if (sel.includes(index)) {
+          setSel(sel.filter(i => i !== index));
         } else {
-          if (state.labSelection.length < 2) {
-            state.labSelection.push(index);
+          if (sel.length < 2) {
+            sel.push(index);
           } else {
-            state.labSelection.shift();
-            state.labSelection.push(index);
+            sel.shift();
+            sel.push(index);
           }
         }
         renderLab(); 

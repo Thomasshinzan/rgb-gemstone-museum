@@ -1,11 +1,11 @@
-import { state, RANK_DATA, saveData, loadSaveData, BOOK_PRICE } from './gameState.js';
+import { state, RANK_DATA, saveData, loadSaveData, BOOK_PRICE, TOHO_FUSION_FEE, TOHO_KUZU_PRICE, TOHO_KUZU_COUNT } from './gameState.js';
 import { 
   showScreen, showCustomAlert, updateShopUI, renderZukan, 
   checkNobleQuest, checkCountessQuest, updateMineMenuUI, 
   updateLongExpeditionUI, updateNobleExpeditionUI, 
-  checkMineUpgradeQuest, renderWorkshop, updateWorkshopProgress, renderLab
+  checkMineUpgradeQuest, renderWorkshop, updateWorkshopProgress, renderLab, renderTohoZukan
 } from './gameUI.js';
-import { appraiser, startMiningProcess, renderMissions, startFusionProcess } from './gameLogic.js';
+import { appraiser, startMiningProcess, renderMissions, startFusionProcess, startTohoFusionProcess } from './gameLogic.js';
 
 let previousScreen = null; 
 
@@ -18,6 +18,11 @@ async function startApp() {
       state.zukanData[gem.id] = { discovered: false, maxPurity: 0, bestCarat: 0, bestClarity: '-', ref: gem };
     });
   }
+
+  await appraiser.loadTohoGemData();
+  appraiser.tohoGemData.forEach(gem => {
+    state.tohoZukanData[gem.id] = { discovered: false, maxPurity: 0, bestCarat: 0, bestClarity: '-', ref: gem };
+  });
   
   loadSaveData(); 
   
@@ -116,6 +121,49 @@ document.getElementById('lab-back-btn').addEventListener('click', () => {
   if (previousScreen) showScreen(previousScreen);
 });
 
+// --- 錬金術室の通常 / 東方モード切替 ---
+document.getElementById('lab-mode-normal').addEventListener('click', () => {
+  state.labMode = 'normal';
+  renderLab();
+});
+
+document.getElementById('lab-mode-toho').addEventListener('click', () => {
+  if (!state.bookObtained) return;
+  state.labMode = 'toho';
+  renderLab();
+});
+
+// --- 東方のクズ石の購入（東方貿易） ---
+document.getElementById('btn-buy-kuzu').addEventListener('click', () => {
+  if (state.tohoLabInventory.length > 0) {
+    showCustomAlert(`東方のクズ石は ${TOHO_KUZU_COUNT} 個セットの仕入れです。<br>まず今の在庫（${state.tohoLabInventory.length} 個）を使い切ってください。`);
+    return;
+  }
+  if (state.money < TOHO_KUZU_PRICE) {
+    showCustomAlert(`資金が足りません。<br>クズ石の仕入れには <b>${TOHO_KUZU_PRICE.toLocaleString()} G</b> 必要です（あと <b>${(TOHO_KUZU_PRICE - state.money).toLocaleString()} G</b>）。`);
+    return;
+  }
+  state.money -= TOHO_KUZU_PRICE;
+  for (let i = 0; i < TOHO_KUZU_COUNT; i++) {
+    state.tohoLabInventory.push({ ...appraiser.createKuzu(), acquiredAt: Date.now() + i });
+  }
+  saveData();
+  updateShopUI();
+  renderLab();
+  showCustomAlert(`🚢 <b>東方貿易の船が到着しました！</b><br><br>クズ石 <b>${TOHO_KUZU_COUNT} 個</b> を仕入れました（${TOHO_KUZU_PRICE.toLocaleString()} G）。<br>東方の錬金術室で融合に使えます。`);
+});
+
+// --- 色図鑑（別冊） ---
+document.getElementById('btn-toho-zukan').addEventListener('click', () => {
+  renderTohoZukan();
+  showScreen(document.getElementById('toho-zukan-screen'));
+});
+
+document.getElementById('toho-zukan-back-btn').addEventListener('click', () => {
+  renderLab();
+  showScreen(document.getElementById('lab-screen'));
+});
+
 // --- 工房システムの処理 ---
 document.getElementById('btn-start-craft').addEventListener('click', (e) => {
   const cost = 1000;
@@ -187,6 +235,31 @@ document.getElementById('btn-collect-craft').addEventListener('click', () => {
 });
 
 document.getElementById('btn-start-fusion').addEventListener('click', () => {
+  if (state.labMode === 'toho') {
+    const selectedIndexes = state.tohoLabSelection || [];
+    if (selectedIndexes.length !== 2) return;
+    if (state.money < TOHO_FUSION_FEE) {
+      showCustomAlert(`資金が足りません。<br>東方の錬成には手数料 <b>${TOHO_FUSION_FEE.toLocaleString()} G</b> が必要です（あと <b>${(TOHO_FUSION_FEE - state.money).toLocaleString()} G</b>）。`);
+      return;
+    }
+    
+    const indices = [...selectedIndexes].sort((a, b) => b - a);
+    const gemA = state.tohoLabInventory[indices[0]];
+    const gemB = state.tohoLabInventory[indices[1]];
+    
+    state.tohoLabInventory.splice(indices[0], 1);
+    state.tohoLabInventory.splice(indices[1], 1);
+    state.tohoLabSelection = []; 
+    state.money -= TOHO_FUSION_FEE;
+    
+    saveData();
+    updateShopUI();
+    renderLab(); 
+    
+    startTohoFusionProcess(gemA, gemB);
+    return;
+  }
+
   const selectedIndexes = state.labSelection || [];
   if (selectedIndexes.length !== 2) return;
   
@@ -301,6 +374,11 @@ document.getElementById('confirm-yes-btn').addEventListener('click', () => {
   state.alchemyXP = 0;
   state.bookDiscovered = false;
   state.bookObtained = false;
+  state.endingSeen = false;
+  state.labMode = 'normal';
+  state.tohoLabInventory = [];
+  state.tohoLabSelection = [];
+  Object.values(state.tohoZukanData).forEach(e => { e.discovered = false; e.maxPurity = 0; e.bestCarat = 0; e.bestClarity = '-'; });
   state.employees = 0;
   state.nobleQuestState = 0;
   state.countessQuestState = 0;
@@ -330,6 +408,9 @@ document.getElementById('btn-export-save').addEventListener('click', () => {
     alchemyXP: state.alchemyXP,
     bookDiscovered: state.bookDiscovered,
     bookObtained: state.bookObtained,
+    endingSeen: state.endingSeen,
+    tohoLabInventory: state.tohoLabInventory,
+    tohoZukan: {},
     nobleQuestState: state.nobleQuestState, 
     countessQuestState: state.countessQuestState, 
     neighborTradeUnlocked: state.neighborTradeUnlocked,
@@ -344,6 +425,9 @@ document.getElementById('btn-export-save').addEventListener('click', () => {
   };
   for (const key in state.zukanData) {
     saveObj.zukan[key] = { discovered: state.zukanData[key].discovered, maxPurity: state.zukanData[key].maxPurity, bestCarat: state.zukanData[key].bestCarat, bestClarity: state.zukanData[key].bestClarity };
+  }
+  for (const key in state.tohoZukanData) {
+    saveObj.tohoZukan[key] = { discovered: state.tohoZukanData[key].discovered, maxPurity: state.tohoZukanData[key].maxPurity, bestCarat: state.tohoZukanData[key].bestCarat, bestClarity: state.tohoZukanData[key].bestClarity };
   }
   document.getElementById('save-data-text').value = btoa(encodeURIComponent(JSON.stringify(saveObj)));
   document.getElementById('save-data-overlay').style.display = 'flex';
@@ -369,6 +453,19 @@ document.getElementById('btn-do-import').addEventListener('click', () => {
     state.alchemyXP = saveObj.alchemyXP || 0;
     state.bookDiscovered = saveObj.bookDiscovered || false;
     state.bookObtained = saveObj.bookObtained || false;
+    state.endingSeen = saveObj.endingSeen || false;
+    state.tohoLabInventory = saveObj.tohoLabInventory || [];
+    state.tohoLabSelection = [];
+    if (saveObj.tohoZukan) {
+      for (const key in saveObj.tohoZukan) {
+        if (state.tohoZukanData[key]) {
+          state.tohoZukanData[key].discovered = saveObj.tohoZukan[key].discovered;
+          state.tohoZukanData[key].maxPurity = saveObj.tohoZukan[key].maxPurity || 0;
+          state.tohoZukanData[key].bestCarat = saveObj.tohoZukan[key].bestCarat || 0;
+          state.tohoZukanData[key].bestClarity = saveObj.tohoZukan[key].bestClarity || '-';
+        }
+      }
+    }
     state.nobleQuestState = saveObj.nobleQuestState || 0;
     state.countessQuestState = saveObj.countessQuestState || 0;
     state.neighborTradeUnlocked = saveObj.neighborTradeUnlocked || false;

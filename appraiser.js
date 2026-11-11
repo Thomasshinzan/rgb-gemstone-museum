@@ -1,7 +1,8 @@
 // appraiser.js の全文
 export class Appraiser {
   constructor() {
-    this.gemData = {}; 
+    this.gemData = {};
+    this.tohoGemData = [];
   }
 
   async loadGemData() {
@@ -11,6 +12,16 @@ export class Appraiser {
     } catch (error) {
       console.error('宝石データの読み込みに失敗しました:', error);
       this.gemData = { "mineId1": [], "mineId2": [] }; 
+    }
+  }
+
+  async loadTohoGemData() {
+    try {
+      const response = await fetch('toho_gem.json');
+      this.tohoGemData = await response.json();
+    } catch (error) {
+      console.error('東方の宝石データの読み込みに失敗しました:', error);
+      this.tohoGemData = [];
     }
   }
 
