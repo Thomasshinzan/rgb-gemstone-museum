@@ -3,7 +3,7 @@ import { state, saveData, grantAlchemyXP, TOHO_TOLERANCE_SCALE } from './gameSta
 import { 
   showScreen, showCustomAlert, updateShopUI, 
   checkNobleQuest, checkCountessQuest, renderLab,
-  checkMineUpgradeQuest, checkEnding
+  checkMineUpgradeQuest, checkEnding, showFusionChoice
 } from './gameUI.js';
 
 export const appraiser = new Appraiser();
@@ -381,7 +381,7 @@ export function startFusionProcess(gemA, gemB, opId) {
         const hitGem = hitMatch.gem;
         
         const avgCarat = (parseFloat(gemA.carat) + parseFloat(gemB.carat)) / 2;
-        const newCarat = (avgCarat * (1 + (Math.random() * 0.2))).toFixed(2);
+        const newCarat = (avgCarat * 1.5 * (1 + (Math.random() * 0.2))).toFixed(2);
         
         const bonusMultiplier = 1.0 + (state.employees * 0.1);
         const clarities = ["FL", "IF", "VVS", "VS", "SI", "I"];
@@ -456,18 +456,9 @@ export function startFusionProcess(gemA, gemB, opId) {
           msg += `<br><br>📖 <b>【東方由来の錬金術書の発見！】</b><br>実験を重ねるなか、錬金術室の古い棚の奥から、東方由来の錬金術書が見つかりました。<br>しかし書には封印がかけられており、手に入れるには然るべき対価が必要らしい……。`;
         }
 
-        if (state.inventory.length < 20) {
-            state.inventory.push(newGemData);
-            saveData();
-            if (questCleared) { updateShopUI(); checkCountessQuest(); }
-            showCustomAlert(msg + `<br><br>この宝石は工房に送られました。`, true);
-        } else {
-            state.money += newPrice;
-            saveData();
-            updateShopUI();
-            if (questCleared) checkCountessQuest();
-            showCustomAlert(msg + `<br><br>※工房が満杯のため自動的に売却され <b style="color:#f4d03f;">${newPrice.toLocaleString()} G</b> を得ました。`, true);
-        }
+        saveData();
+        if (questCleared) { updateShopUI(); checkCountessQuest(); }
+        showFusionChoice(newGemData, msg);
         
       } else {
         const newKuzu = appraiser.createKuzu(avgR, avgG, avgB);
@@ -538,7 +529,7 @@ export function startTohoFusionProcess(gemA, gemB, opId) {
         const hitGem = hitMatch.gem;
         
         const avgCarat = (parseFloat(gemA.carat) + parseFloat(gemB.carat)) / 2;
-        const newCarat = (avgCarat * (1 + (Math.random() * 0.2))).toFixed(2);
+        const newCarat = (avgCarat * 1.5 * (1 + (Math.random() * 0.2))).toFixed(2);
         
         const clarities = ["FL", "IF", "VVS", "VS", "SI", "I"];
         const clarityIndex = Math.floor(Math.random() * Math.random() * clarities.length);

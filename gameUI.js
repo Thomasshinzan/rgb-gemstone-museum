@@ -496,6 +496,53 @@ export function updateWorkshopProgress() {
   }
 }
 
+let fusionChoiceWired = false;
+let pendingFusionGem = null;
+// 融合で生まれた宝石の行き先（工房に送る／売却する）をプレイヤーに選ばせる
+export function showFusionChoice(gem, msgHtml) {
+  const overlay = document.getElementById('fusion-choice-overlay');
+  if (!overlay) {
+    // フォールバック（旧仕様）: 空きがあれば工房へ、満杯なら自動売却
+    if (state.inventory.length < 20) { state.inventory.push(gem); saveData(); }
+    else { state.money += gem.price; saveData(); updateShopUI(); }
+    showCustomAlert(msgHtml, true);
+    return;
+  }
+  pendingFusionGem = gem;
+  document.getElementById('fusion-choice-visual').style.backgroundColor = `rgb(${gem.r}, ${gem.g}, ${gem.b})`;
+  document.getElementById('fusion-choice-name').textContent = gem.name;
+  document.getElementById('fusion-choice-stats').textContent = `${gem.carat} ct | 透明度: ${gem.clarity} | 純度: ${gem.purity}% | ${gem.price.toLocaleString()} G`;
+  document.getElementById('fusion-choice-msg').innerHTML = msgHtml;
+  const full = state.inventory.length >= 20;
+  document.getElementById('fusion-choice-note').textContent = full ? '※工房が満杯のため、売却のみ選べます。' : '';
+  const keepBtn = document.getElementById('btn-fusion-keep');
+  keepBtn.disabled = full;
+  keepBtn.style.opacity = full ? '0.5' : '1';
+  document.getElementById('btn-fusion-sell').textContent = `💰 売却する (${gem.price.toLocaleString()} G)`;
+  if (!fusionChoiceWired) {
+    fusionChoiceWired = true;
+    keepBtn.addEventListener('click', () => {
+      if (!pendingFusionGem) return;
+      if (state.inventory.length < 20) state.inventory.push(pendingFusionGem);
+      pendingFusionGem = null;
+      saveData();
+      overlay.style.display = 'none';
+      renderLab();
+      renderWorkshop();
+    });
+    document.getElementById('btn-fusion-sell').addEventListener('click', () => {
+      if (!pendingFusionGem) return;
+      state.money += pendingFusionGem.price;
+      pendingFusionGem = null;
+      saveData();
+      updateShopUI();
+      overlay.style.display = 'none';
+      renderLab();
+    });
+  }
+  overlay.style.display = 'flex';
+}
+
 export function renderLab() {
   const alchemyInfo = document.getElementById('lab-alchemy-info');
   if (alchemyInfo) {
