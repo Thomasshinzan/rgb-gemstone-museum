@@ -1,4 +1,5 @@
 import { state, RANK_DATA, saveData, ALCHEMY_XP_TABLE, ALCHEMY_MAX_LEVEL, FUSION_OPS, getFusionOp } from './gameState.js';
+import { computeFusionRGB } from './gameLogic.js';
 
 export function showScreen(screenEl) {
   document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
@@ -640,10 +641,15 @@ export function renderLab() {
   const btnFusion = document.getElementById('btn-start-fusion');
   const selectionInfo = document.getElementById('lab-selection-info');
   
+  const focusResult = document.getElementById('lab-focus-result');
+  const focusArrow = document.getElementById('lab-focus-arrow');
+
   const updateSelectionUI = () => {
     focusA.className = 'focus-gem empty'; focusA.style.backgroundColor = '';
     focusB.className = 'focus-gem empty'; focusB.style.backgroundColor = '';
-    
+    if (focusResult) { focusResult.className = 'focus-gem empty'; focusResult.style.backgroundColor = ''; }
+    if (focusArrow) focusArrow.style.opacity = '0.3';
+
     if (sel.length > 0 && inv[sel[0]]) {
       const gemA = inv[sel[0]];
       focusA.className = 'focus-gem kuzu-focus';
@@ -658,14 +664,19 @@ export function renderLab() {
     if (sel.length === 2) {
       const gA = inv[sel[0]];
       const gB = inv[sel[1]];
-      const avgR = Math.floor((gA.r + gB.r) / 2);
-      const avgG = Math.floor((gA.g + gB.g) / 2);
-      const avgB = Math.floor((gA.b + gB.b) / 2);
-      selectionInfo.innerHTML = `予想RGB: (<span style="color:#ff8888">${avgR}</span>, <span style="color:#88ff88">${avgG}</span>, <span style="color:#8888ff">${avgB}</span>)`;
+      const res = computeFusionRGB(gA, gB, curOp.id);
+      if (focusResult) {
+        focusResult.className = 'focus-gem kuzu-focus';
+        focusResult.style.backgroundColor = `rgb(${res.r}, ${res.g}, ${res.b})`;
+      }
+      if (focusArrow) focusArrow.style.opacity = '1';
+      selectionInfo.textContent = '';
+      selectionInfo.style.display = 'none';
       btnFusion.textContent = `⚗️ 融合する (${curFee.toLocaleString()} G)`;
       btnFusion.style.display = 'inline-block';
     } else {
       selectionInfo.textContent = 'クズ石を2つ選択してください';
+      selectionInfo.style.display = '';
       btnFusion.style.display = 'none';
     }
   };
