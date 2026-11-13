@@ -141,6 +141,11 @@ function setupAppraisalRoom(gemCount, poolType = 'mineId1') {
         
         roughStone.classList.add(gemResult.isKuzu ? 'kuzu-appraised' : 'gem-visual-appraised', 'appraised');
 
+        // 鑑定した時点で「売却」タグを付け、その場で保管と切り替えられるようにする
+        if (state.workshopUnlocked) {
+          roughStone.innerHTML = '<div class="badge-sell">売却</div>';
+        }
+
         if (!gemResult.isKuzu && gemResult.id) {
           const zEntry = state.zukanData[gemResult.id];
           if (!zEntry.discovered) isNew = true;
@@ -164,7 +169,8 @@ function setupAppraisalRoom(gemCount, poolType = 'mineId1') {
           sellBtn.textContent = '確定して店に戻る';
         }
         
-      } else if (allRevealed) {
+      } else {
+        // 鑑定済みの石は、全て鑑定し終わる前でもタップで「売却 ⇄ 保管」を切り替えられる
         if (state.workshopUnlocked) {
           let canKeep = true;
           if (!stoneObj.isKept) {
@@ -186,7 +192,7 @@ function setupAppraisalRoom(gemCount, poolType = 'mineId1') {
               currentSessionTotal -= gemResult.price; 
             } else {
               roughStone.classList.remove('gem-kept');
-              roughStone.innerHTML = '';
+              roughStone.innerHTML = '<div class="badge-sell">売却</div>';
               currentSessionTotal += gemResult.price; 
             }
             sessionTotalDisplay.textContent = currentSessionTotal.toLocaleString();
