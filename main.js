@@ -3,7 +3,8 @@ import {
   showScreen, showCustomAlert, updateShopUI, renderZukan, 
   checkNobleQuest, checkCountessQuest, updateMineMenuUI, 
   updateLongExpeditionUI, updateNobleExpeditionUI, 
-  checkMineUpgradeQuest, renderWorkshop, updateWorkshopProgress, renderLab, renderTohoZukan
+  checkMineUpgradeQuest, renderWorkshop, updateWorkshopProgress, renderLab, renderTohoZukan,
+  showOpSelect, hideOpSelect
 } from './gameUI.js';
 import { appraiser, startMiningProcess, renderMissions, startFusionProcess, startTohoFusionProcess } from './gameLogic.js';
 
@@ -131,6 +132,19 @@ document.getElementById('lab-mode-toho').addEventListener('click', () => {
   if (!state.bookObtained) return;
   state.labMode = 'toho';
   renderLab();
+});
+
+// --- 融合方法の選択ポップアップ ---
+document.getElementById('btn-op-select').addEventListener('click', () => {
+  showOpSelect();
+});
+
+document.getElementById('op-select-close-btn').addEventListener('click', () => {
+  hideOpSelect();
+});
+
+document.getElementById('op-select-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'op-select-overlay') hideOpSelect();
 });
 
 // --- 東方のクズ石の補充（東方貿易、1個 1,000 G の補充式） ---

@@ -214,6 +214,16 @@
     </div>
   </div>
 
+  <div id="op-select-overlay" class="modal-overlay">
+    <div class="modal-box">
+      <div style="font-size: 1.15rem; font-weight: bold; color: #e0d5c1; margin-bottom: 15px;">融合方法を選択</div>
+      <div id="op-select-options" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      <div class="modal-btn-group">
+        <button id="op-select-close-btn" class="modal-btn" style="background: linear-gradient(to bottom, #5c4734, #3d2f22); color: #e0d5c1;">戻る</button>
+      </div>
+    </div>
+  </div>
+
   <div id="sell-confirm-overlay" class="modal-overlay">
     <div class="modal-box">
       <h3 style="color: #55ff55; margin-top: 0;">売却の確認</h3>
@@ -433,13 +443,10 @@
       <div id="lab-capacity" style="color: #c4b5a2; font-size: 1rem; margin-bottom: 5px; text-align: left;">保管状況: 0 / 20</div>
       <div id="lab-inventory-list" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-start; background: #1a1410; padding: 15px; border-radius: 10px; min-height: 100px; max-height: 25vh; overflow-y: auto; border: 1px solid #4a3929; margin-bottom: 20px;">
       </div>
-      <div id="lab-op-area" style="margin-bottom: 12px;">
-        <div id="lab-op-buttons" style="display: flex; gap: 8px;"></div>
-      </div>
-
       <div id="lab-alchemy-info" style="color: #d8b4e2; font-size: 1rem; margin-bottom: 5px; text-align: left;">⚗️ 錬金術Lv.1　XP: 0 / 150</div>
-      <div style="display: flex; justify-content: center; margin-bottom: 15px;">
-        <button id="btn-start-fusion" style="display: none; background: linear-gradient(to bottom, #4a148c, #311b92); color: #e040fb; border: 1px solid #9c27b0; padding: 12px 30px; font-size: 1.2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.6);">⚗️ 融合する</button>
+      <div id="lab-action-row" style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <button id="btn-op-select" style="flex: 1; background: linear-gradient(to bottom, #3d2f22, #2a2018); color: #e0d5c1; border: 2px solid #8b6b4a; padding: 12px 10px; font-size: 1.1rem; border-radius: 8px;">混合</button>
+        <button id="btn-start-fusion" style="flex: 2; visibility: hidden; background: linear-gradient(to bottom, #4a148c, #311b92); color: #e040fb; border: 1px solid #9c27b0; padding: 12px 10px; font-size: 1.2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.6);">⚗️ 融合する</button>
       </div>
 
     </div>
