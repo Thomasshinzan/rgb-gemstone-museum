@@ -4,7 +4,7 @@ import {
   checkNobleQuest, checkCountessQuest, updateMineMenuUI, 
   updateLongExpeditionUI, updateNobleExpeditionUI, 
   checkMineUpgradeQuest, renderWorkshop, updateWorkshopProgress, renderLab, renderTohoZukan,
-  showOpSelect, hideOpSelect
+  showOpSelect, hideOpSelect, showModeSelect, hideModeSelect
 } from './gameUI.js';
 import { appraiser, startMiningProcess, renderMissions, startFusionProcess, startTohoFusionProcess } from './gameLogic.js';
 
@@ -122,11 +122,17 @@ document.getElementById('lab-back-btn').addEventListener('click', () => {
   if (previousScreen) showScreen(previousScreen);
 });
 
-// --- 錬金術室の通常 / 東方モード切替（単一ボタンのトグル） ---
+// --- 錬金術室の通常 / 東方モード切替（単一ボタン＋二択ポップアップ、項目27） ---
 document.getElementById('btn-lab-mode').addEventListener('click', () => {
-  if (!state.bookObtained) return;
-  state.labMode = state.labMode === 'toho' ? 'normal' : 'toho';
-  renderLab();
+  showModeSelect();
+});
+
+document.getElementById('mode-select-close-btn').addEventListener('click', () => {
+  hideModeSelect();
+});
+
+document.getElementById('mode-select-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'mode-select-overlay') hideModeSelect();
 });
 
 // --- 融合方法の選択ポップアップ ---
@@ -304,18 +310,7 @@ document.getElementById('btn-start-fusion').addEventListener('click', () => {
   startFusionProcess(gemA, gemB, op.id);
 });
 
-// --- 東方の錬金術書の購入 ---
-document.getElementById('btn-buy-book').addEventListener('click', () => {
-  if (!state.bookDiscovered || state.bookObtained) return;
-  if (state.money < BOOK_PRICE) {
-    showCustomAlert(`資金が足りません。<br>錬金術書の対価は <b>${BOOK_PRICE.toLocaleString()} G</b> です（あと <b>${(BOOK_PRICE - state.money).toLocaleString()} G</b>）。`);
-    return;
-  }
-  document.getElementById('book-confirm-msg').innerHTML =
-    `発見した東方の錬金術書には封印がかけられています。<br>解くための対価は <b style="color:#f4d03f;">${BOOK_PRICE.toLocaleString()} G</b>。<br><br>所持金: ${state.money.toLocaleString()} G<br>購入後: ${(state.money - BOOK_PRICE).toLocaleString()} G`;
-  document.getElementById('book-confirm-overlay').style.display = 'flex';
-});
-
+// --- 東方の錬金術書の購入（確認を開く入口は融合先ポップアップ内の東方融合: gameUI.openBookPurchase） ---
 document.getElementById('book-confirm-no').addEventListener('click', () => {
   document.getElementById('book-confirm-overlay').style.display = 'none';
 });

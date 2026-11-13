@@ -1,4 +1,4 @@
-import { state, RANK_DATA, saveData, ALCHEMY_XP_TABLE, ALCHEMY_MAX_LEVEL, FUSION_OPS, getFusionOp } from './gameState.js';
+import { state, RANK_DATA, saveData, ALCHEMY_XP_TABLE, ALCHEMY_MAX_LEVEL, FUSION_OPS, getFusionOp, BOOK_PRICE } from './gameState.js';
 import { computeFusionRGB } from './gameLogic.js';
 
 export function showScreen(screenEl) {
@@ -549,6 +549,73 @@ export function hideOpSelect() {
   if (overlay) overlay.style.display = 'none';
 }
 
+// --- 融合先（通常 / 東方）の選択ポップアップ（項目27: 演算選択と同じ形） ---
+export function showModeSelect() {
+  const overlay = document.getElementById('mode-select-overlay');
+  const box = document.getElementById('mode-select-options');
+  if (!overlay || !box) return;
+  box.innerHTML = '';
+  const modes = [
+    { id: 'normal', label: '⚗️ 通常融合', unlocked: true },
+    { id: 'toho', label: '🏮 東方融合', unlocked: state.bookObtained },
+  ];
+  modes.forEach(mode => {
+    const btn = document.createElement('button');
+    btn.className = 'op-select-btn';
+    btn.dataset.mode = mode.id;
+    btn.style.width = '100%';
+    btn.style.padding = '12px';
+    btn.style.fontSize = '1.1rem';
+    btn.style.borderRadius = '8px';
+    if (mode.id === 'toho' && !state.bookObtained && state.bookDiscovered) {
+      // 発見済み・未入手: この選択肢自体が購入の入口になる（項目28・案A）
+      btn.textContent = `${mode.label}（📖 錬金術書を入手）`;
+      btn.style.background = 'linear-gradient(to bottom, #6a4a8b, #452a5e)';
+      btn.style.color = '#f0e6ff';
+      btn.style.border = '2px solid #b48be0';
+      btn.addEventListener('click', () => { hideModeSelect(); openBookPurchase(); });
+    } else if (!mode.unlocked) {
+      btn.textContent = `${mode.label} 🔒書籍未入手`;
+      btn.style.background = 'linear-gradient(to bottom, #2c241c, #201913)';
+      btn.style.color = '#6f6152';
+      btn.style.border = '2px solid #453723';
+      btn.style.opacity = '0.75';
+      btn.disabled = true;
+    } else if (state.labMode === mode.id) {
+      btn.textContent = `${mode.label} ✔`;
+      btn.style.background = 'linear-gradient(to bottom, #6a4a8b, #452a5e)';
+      btn.style.color = '#f0e6ff';
+      btn.style.border = '2px solid #b48be0';
+      btn.addEventListener('click', () => { hideModeSelect(); });
+    } else {
+      btn.textContent = mode.label;
+      btn.style.background = 'linear-gradient(to bottom, #3d2f22, #2a2018)';
+      btn.style.color = '#c4b5a2';
+      btn.style.border = '2px solid #5c4734';
+      btn.addEventListener('click', () => { state.labMode = mode.id; hideModeSelect(); renderLab(); });
+    }
+    box.appendChild(btn);
+  });
+  overlay.style.display = 'flex';
+}
+
+export function hideModeSelect() {
+  const overlay = document.getElementById('mode-select-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+// --- 東方の錬金術書の購入確認を開く（旧・専用ボタンから融合先ポップアップ内へ移設: 項目28） ---
+export function openBookPurchase() {
+  if (!state.bookDiscovered || state.bookObtained) return;
+  if (state.money < BOOK_PRICE) {
+    showCustomAlert(`資金が足りません。<br>錬金術書の対価は <b>${BOOK_PRICE.toLocaleString()} G</b> です（あと <b>${(BOOK_PRICE - state.money).toLocaleString()} G</b>）。`);
+    return;
+  }
+  document.getElementById('book-confirm-msg').innerHTML =
+    `発見した東方の錬金術書には封印がかけられています。<br>解くための対価は <b style="color:#f4d03f;">${BOOK_PRICE.toLocaleString()} G</b>。<br><br>所持金: ${state.money.toLocaleString()} G<br>購入後: ${(state.money - BOOK_PRICE).toLocaleString()} G`;
+  document.getElementById('book-confirm-overlay').style.display = 'flex';
+}
+
 export function showOpSelect() {
   const overlay = document.getElementById('op-select-overlay');
   const box = document.getElementById('op-select-options');
@@ -596,11 +663,6 @@ export function renderLab() {
       : `⚗️ 錬金術Lv.${state.alchemyLevel}　XP: ${state.alchemyXP} / ${ALCHEMY_XP_TABLE[state.alchemyLevel]}`;
     if (state.bookObtained) alchemyInfo.textContent += '　📖 錬金術書 入手済み';
   }
-  const btnBuyBook = document.getElementById('btn-buy-book');
-  if (btnBuyBook) {
-    btnBuyBook.style.display = (state.bookDiscovered && !state.bookObtained) ? 'block' : 'none';
-  }
-
   // 通常 / 東方モード切替まわりの表示
   const isToho = state.labMode === 'toho';
   const inv = isToho ? state.tohoLabInventory : state.labInventory;
@@ -609,11 +671,12 @@ export function renderLab() {
   let sel = isToho ? state.tohoLabSelection : state.labSelection;
   const setSel = (v) => { if (isToho) state.tohoLabSelection = v; else state.labSelection = v; sel = v; };
 
-  // モード切替は単一ボタンに集約: ラベルは現在のモード。書籍未入手の間は切替不可
+  // モード切替は単一ボタンに集約: ラベルは現在のモード。タップで二択ポップアップ（項目27）
+  // 書籍未入手の間もボタンは押せる（ポップアップ内で東方が 🔒書籍未入手 と分かる）
   const modeBtn = document.getElementById('btn-lab-mode');
   if (modeBtn) {
     modeBtn.textContent = isToho ? '🏮 東方融合' : '⚗️ 通常融合';
-    modeBtn.disabled = !state.bookObtained;
+    modeBtn.disabled = false;
     if (!state.bookObtained) {
       modeBtn.style.background = 'linear-gradient(to bottom, #6a4a8b, #452a5e)';
       modeBtn.style.color = '#f0e6ff';
