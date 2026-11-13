@@ -623,10 +623,6 @@ export function renderLab() {
       opBtns.appendChild(btn);
     });
   }
-  const opDesc = document.getElementById('lab-op-desc');
-  if (opDesc) {
-    opDesc.textContent = `【${curOp.name}】${curOp.formula} ／ 手数料 ${curFee.toLocaleString()} G`;
-  }
   const tohoUi = document.getElementById('lab-toho-ui');
   if (tohoUi) tohoUi.style.display = isToho ? 'block' : 'none';
 
