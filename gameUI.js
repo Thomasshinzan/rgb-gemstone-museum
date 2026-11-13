@@ -1,4 +1,4 @@
-import { state, RANK_DATA, saveData, ALCHEMY_XP_TABLE, ALCHEMY_MAX_LEVEL, FUSION_OPS, getFusionOp } from './gameState.js';
+import { state, RANK_DATA, saveData, ALCHEMY_XP_TABLE, ALCHEMY_MAX_LEVEL, FUSION_OPS, getFusionOp, BOOK_PRICE } from './gameState.js';
 import { computeFusionRGB } from './gameLogic.js';
 
 export function showScreen(screenEl) {
@@ -567,7 +567,14 @@ export function showModeSelect() {
     btn.style.padding = '12px';
     btn.style.fontSize = '1.1rem';
     btn.style.borderRadius = '8px';
-    if (!mode.unlocked) {
+    if (mode.id === 'toho' && !state.bookObtained && state.bookDiscovered) {
+      // 発見済み・未入手: この選択肢自体が購入の入口になる（項目28・案A）
+      btn.textContent = `${mode.label}（📖 錬金術書を入手）`;
+      btn.style.background = 'linear-gradient(to bottom, #6a4a8b, #452a5e)';
+      btn.style.color = '#f0e6ff';
+      btn.style.border = '2px solid #b48be0';
+      btn.addEventListener('click', () => { hideModeSelect(); openBookPurchase(); });
+    } else if (!mode.unlocked) {
       btn.textContent = `${mode.label} 🔒書籍未入手`;
       btn.style.background = 'linear-gradient(to bottom, #2c241c, #201913)';
       btn.style.color = '#6f6152';
@@ -595,6 +602,18 @@ export function showModeSelect() {
 export function hideModeSelect() {
   const overlay = document.getElementById('mode-select-overlay');
   if (overlay) overlay.style.display = 'none';
+}
+
+// --- 東方の錬金術書の購入確認を開く（旧・専用ボタンから融合先ポップアップ内へ移設: 項目28） ---
+export function openBookPurchase() {
+  if (!state.bookDiscovered || state.bookObtained) return;
+  if (state.money < BOOK_PRICE) {
+    showCustomAlert(`資金が足りません。<br>錬金術書の対価は <b>${BOOK_PRICE.toLocaleString()} G</b> です（あと <b>${(BOOK_PRICE - state.money).toLocaleString()} G</b>）。`);
+    return;
+  }
+  document.getElementById('book-confirm-msg').innerHTML =
+    `発見した東方の錬金術書には封印がかけられています。<br>解くための対価は <b style="color:#f4d03f;">${BOOK_PRICE.toLocaleString()} G</b>。<br><br>所持金: ${state.money.toLocaleString()} G<br>購入後: ${(state.money - BOOK_PRICE).toLocaleString()} G`;
+  document.getElementById('book-confirm-overlay').style.display = 'flex';
 }
 
 export function showOpSelect() {
@@ -644,11 +663,6 @@ export function renderLab() {
       : `⚗️ 錬金術Lv.${state.alchemyLevel}　XP: ${state.alchemyXP} / ${ALCHEMY_XP_TABLE[state.alchemyLevel]}`;
     if (state.bookObtained) alchemyInfo.textContent += '　📖 錬金術書 入手済み';
   }
-  const btnBuyBook = document.getElementById('btn-buy-book');
-  if (btnBuyBook) {
-    btnBuyBook.style.display = (state.bookDiscovered && !state.bookObtained) ? 'block' : 'none';
-  }
-
   // 通常 / 東方モード切替まわりの表示
   const isToho = state.labMode === 'toho';
   const inv = isToho ? state.tohoLabInventory : state.labInventory;
