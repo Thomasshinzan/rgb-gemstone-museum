@@ -689,14 +689,8 @@ export function renderLab() {
   }
   const labTitle = document.getElementById('lab-title');
   if (labTitle) labTitle.textContent = isToho ? '東方の錬金術室' : '錬金術室';
-  const labDesc = document.getElementById('lab-desc');
   const curOp = getFusionOp(state.labOp);
   const curFee = isToho ? curOp.feeToho : curOp.feeNormal;
-  if (labDesc) {
-    labDesc.innerHTML = isToho
-      ? `東方貿易のクズ石を混ぜ合わせ、東方の宝石を錬成します。<br><span style="font-size: 0.9rem;">(手数料: ${curFee.toLocaleString()} G / 期間: 5秒 / 錬成した宝石は王家に献上されます)</span>`
-      : `2つのクズ石を混ぜ合わせ、新たな宝石を錬成します。<br><span style="font-size: 0.9rem;">(手数料: ${curFee.toLocaleString()} G / 期間: 5秒 / 成功時は工房へ送られます)</span>`;
-  }
 
   // 融合の演算（錬成方法）は単一ボタンに集約: ラベルは現在の演算名
   const opSelectBtn = document.getElementById('btn-op-select');
