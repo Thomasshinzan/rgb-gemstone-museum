@@ -544,6 +544,50 @@ export function showFusionChoice(gem, msgHtml) {
   overlay.style.display = 'flex';
 }
 
+export function hideOpSelect() {
+  const overlay = document.getElementById('op-select-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+export function showOpSelect() {
+  const overlay = document.getElementById('op-select-overlay');
+  const box = document.getElementById('op-select-options');
+  if (!overlay || !box) return;
+  box.innerHTML = '';
+  FUSION_OPS.forEach(op => {
+    const unlocked = state.alchemyLevel >= op.unlockLevel;
+    const btn = document.createElement('button');
+    btn.className = 'op-select-btn';
+    btn.dataset.op = op.id;
+    btn.style.width = '100%';
+    btn.style.padding = '12px';
+    btn.style.fontSize = '1.1rem';
+    btn.style.borderRadius = '8px';
+    if (!unlocked) {
+      btn.textContent = `${op.name} 🔒Lv.${op.unlockLevel}`;
+      btn.style.background = 'linear-gradient(to bottom, #2c241c, #201913)';
+      btn.style.color = '#6f6152';
+      btn.style.border = '2px solid #453723';
+      btn.style.opacity = '0.75';
+      btn.disabled = true;
+    } else if (state.labOp === op.id) {
+      btn.textContent = `${op.name} ✔`;
+      btn.style.background = 'linear-gradient(to bottom, #6a4a8b, #452a5e)';
+      btn.style.color = '#f0e6ff';
+      btn.style.border = '2px solid #b48be0';
+      btn.addEventListener('click', () => { hideOpSelect(); });
+    } else {
+      btn.textContent = op.name;
+      btn.style.background = 'linear-gradient(to bottom, #3d2f22, #2a2018)';
+      btn.style.color = '#c4b5a2';
+      btn.style.border = '2px solid #5c4734';
+      btn.addEventListener('click', () => { state.labOp = op.id; hideOpSelect(); renderLab(); });
+    }
+    box.appendChild(btn);
+  });
+  overlay.style.display = 'flex';
+}
+
 export function renderLab() {
   const alchemyInfo = document.getElementById('lab-alchemy-info');
   if (alchemyInfo) {
@@ -588,41 +632,9 @@ export function renderLab() {
       : `2つのクズ石を混ぜ合わせ、新たな宝石を錬成します。<br><span style="font-size: 0.9rem;">(手数料: ${curFee.toLocaleString()} G / 期間: 5秒 / 成功時は工房へ送られます)</span>`;
   }
 
-  // 融合の演算（錬成方法）セレクタ: 錬金術レベルで段階解放
-  const opBtns = document.getElementById('lab-op-buttons');
-  if (opBtns) {
-    opBtns.innerHTML = '';
-    FUSION_OPS.forEach(op => {
-      const unlocked = state.alchemyLevel >= op.unlockLevel;
-      const btn = document.createElement('button');
-      btn.className = 'lab-op-btn';
-      btn.dataset.op = op.id;
-      btn.style.flex = '1';
-      btn.style.padding = '9px 4px';
-      btn.style.borderRadius = '8px';
-      btn.style.fontSize = '0.95rem';
-      if (!unlocked) {
-        btn.textContent = `${op.name} 🔒Lv.${op.unlockLevel}`;
-        btn.style.background = 'linear-gradient(to bottom, #2c241c, #201913)';
-        btn.style.color = '#6f6152';
-        btn.style.border = '2px solid #453723';
-        btn.style.opacity = '0.75';
-      } else if (curOp.id === op.id) {
-        btn.textContent = op.name;
-        btn.style.background = 'linear-gradient(to bottom, #6a4a8b, #452a5e)';
-        btn.style.color = '#f0e6ff';
-        btn.style.border = '2px solid #b48be0';
-        btn.addEventListener('click', () => { state.labOp = op.id; renderLab(); });
-      } else {
-        btn.textContent = op.name;
-        btn.style.background = 'linear-gradient(to bottom, #3d2f22, #2a2018)';
-        btn.style.color = '#c4b5a2';
-        btn.style.border = '2px solid #5c4734';
-        btn.addEventListener('click', () => { state.labOp = op.id; renderLab(); });
-      }
-      opBtns.appendChild(btn);
-    });
-  }
+  // 融合の演算（錬成方法）は単一ボタンに集約: ラベルは現在の演算名
+  const opSelectBtn = document.getElementById('btn-op-select');
+  if (opSelectBtn) opSelectBtn.textContent = curOp.name;
   const tohoUi = document.getElementById('lab-toho-ui');
   if (tohoUi) tohoUi.style.display = isToho ? 'block' : 'none';
 
@@ -669,11 +681,11 @@ export function renderLab() {
       selectionInfo.textContent = '';
       selectionInfo.style.display = 'none';
       btnFusion.textContent = `⚗️ 融合する (${curFee.toLocaleString()} G)`;
-      btnFusion.style.display = 'inline-block';
+      btnFusion.style.visibility = 'visible';
     } else {
       selectionInfo.textContent = 'クズ石を2つ選択してください';
       selectionInfo.style.display = '';
-      btnFusion.style.display = 'none';
+      btnFusion.style.visibility = 'hidden';
     }
   };
 
