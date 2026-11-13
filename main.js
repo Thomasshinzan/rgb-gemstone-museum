@@ -4,7 +4,7 @@ import {
   checkNobleQuest, checkCountessQuest, updateMineMenuUI, 
   updateLongExpeditionUI, updateNobleExpeditionUI, 
   checkMineUpgradeQuest, renderWorkshop, updateWorkshopProgress, renderLab, renderTohoZukan,
-  showOpSelect, hideOpSelect
+  showOpSelect, hideOpSelect, showModeSelect, hideModeSelect
 } from './gameUI.js';
 import { appraiser, startMiningProcess, renderMissions, startFusionProcess, startTohoFusionProcess } from './gameLogic.js';
 
@@ -122,16 +122,17 @@ document.getElementById('lab-back-btn').addEventListener('click', () => {
   if (previousScreen) showScreen(previousScreen);
 });
 
-// --- 錬金術室の通常 / 東方モード切替 ---
-document.getElementById('lab-mode-normal').addEventListener('click', () => {
-  state.labMode = 'normal';
-  renderLab();
+// --- 錬金術室の通常 / 東方モード切替（単一ボタン＋二択ポップアップ、項目27） ---
+document.getElementById('btn-lab-mode').addEventListener('click', () => {
+  showModeSelect();
 });
 
-document.getElementById('lab-mode-toho').addEventListener('click', () => {
-  if (!state.bookObtained) return;
-  state.labMode = 'toho';
-  renderLab();
+document.getElementById('mode-select-close-btn').addEventListener('click', () => {
+  hideModeSelect();
+});
+
+document.getElementById('mode-select-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'mode-select-overlay') hideModeSelect();
 });
 
 // --- 融合方法の選択ポップアップ ---
