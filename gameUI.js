@@ -609,18 +609,21 @@ export function renderLab() {
   let sel = isToho ? state.tohoLabSelection : state.labSelection;
   const setSel = (v) => { if (isToho) state.tohoLabSelection = v; else state.labSelection = v; sel = v; };
 
-  const tohoWrap = document.getElementById('lab-mode-toho-wrap');
-  if (tohoWrap) tohoWrap.style.display = state.bookObtained ? 'block' : 'none';
-  const modeNormalBtn = document.getElementById('lab-mode-normal');
-  const modeTohoBtn = document.getElementById('lab-mode-toho');
-  const paintModeBtn = (btn, active) => {
-    if (!btn) return;
-    btn.style.background = active ? 'linear-gradient(to bottom, #6a4a8b, #452a5e)' : 'linear-gradient(to bottom, #3d2f22, #2a2018)';
-    btn.style.color = active ? '#f0e6ff' : '#a99a86';
-    btn.style.border = active ? '2px solid #b48be0' : '2px solid #5c4734';
-  };
-  paintModeBtn(modeNormalBtn, !isToho);
-  paintModeBtn(modeTohoBtn, isToho);
+  // モード切替は単一ボタンに集約: ラベルは現在のモード。書籍未入手の間は切替不可
+  const modeBtn = document.getElementById('btn-lab-mode');
+  if (modeBtn) {
+    modeBtn.textContent = isToho ? '🏮 東方融合' : '⚗️ 通常融合';
+    modeBtn.disabled = !state.bookObtained;
+    if (!state.bookObtained) {
+      modeBtn.style.background = 'linear-gradient(to bottom, #6a4a8b, #452a5e)';
+      modeBtn.style.color = '#f0e6ff';
+      modeBtn.style.border = '2px solid #b48be0';
+    } else {
+      modeBtn.style.background = 'linear-gradient(to bottom, #3d2f22, #2a2018)';
+      modeBtn.style.color = '#e0d5c1';
+      modeBtn.style.border = '2px solid #8b6b4a';
+    }
+  }
   const labTitle = document.getElementById('lab-title');
   if (labTitle) labTitle.textContent = isToho ? '東方の錬金術室' : '錬金術室';
   const labDesc = document.getElementById('lab-desc');

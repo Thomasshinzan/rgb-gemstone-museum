@@ -122,15 +122,10 @@ document.getElementById('lab-back-btn').addEventListener('click', () => {
   if (previousScreen) showScreen(previousScreen);
 });
 
-// --- 錬金術室の通常 / 東方モード切替 ---
-document.getElementById('lab-mode-normal').addEventListener('click', () => {
-  state.labMode = 'normal';
-  renderLab();
-});
-
-document.getElementById('lab-mode-toho').addEventListener('click', () => {
+// --- 錬金術室の通常 / 東方モード切替（単一ボタンのトグル） ---
+document.getElementById('btn-lab-mode').addEventListener('click', () => {
   if (!state.bookObtained) return;
-  state.labMode = 'toho';
+  state.labMode = state.labMode === 'toho' ? 'normal' : 'toho';
   renderLab();
 });
 
