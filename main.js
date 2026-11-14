@@ -172,15 +172,15 @@ document.getElementById('btn-buy-kuzu').addEventListener('click', () => {
   showCustomAlert(`🚢 <b>東方貿易の船が到着しました！</b><br><br>クズ石 <b>${count} 個</b> を補充しました（${cost.toLocaleString()} G）。<br>在庫: ${state.tohoLabInventory.length} / ${TOHO_LAB_CAP} 個`);
 });
 
-// --- 色図鑑（別冊） ---
-document.getElementById('btn-toho-zukan').addEventListener('click', () => {
+// --- 東方宝石図録（入口は王立宝石図録の「戻る」行の左） ---
+document.getElementById('btn-toho-zukan-open').addEventListener('click', () => {
   renderTohoZukan();
   showScreen(document.getElementById('toho-zukan-screen'));
 });
 
 document.getElementById('toho-zukan-back-btn').addEventListener('click', () => {
-  renderLab();
-  showScreen(document.getElementById('lab-screen'));
+  renderZukan();
+  showScreen(document.getElementById('zukan-screen'));
 });
 
 // --- 工房システムの処理 ---

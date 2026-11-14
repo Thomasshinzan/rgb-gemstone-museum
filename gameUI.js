@@ -57,9 +57,13 @@ export function renderZukan() {
   focusName.style.color = '#fff';
   focusPrice.textContent = '最高純度: ---%';
   focusPrice.style.color = '#55ff55';
-  
-  let discoveredCount = 0; 
-  const totalGems = Object.keys(state.zukanData).length; 
+
+  // 東方宝石図録への入口は錬金術書の入手後にだけ見せる（場所は確保し、戻るの位置は動かさない）
+  const tohoZukanBtn = document.getElementById('btn-toho-zukan-open');
+  if (tohoZukanBtn) tohoZukanBtn.style.visibility = state.bookObtained ? 'visible' : 'hidden';
+
+  let discoveredCount = 0;
+  const totalGems = Object.keys(state.zukanData).length;
 
   const groupedGems = {
     "Legendary": [],
@@ -175,46 +179,64 @@ export function renderTohoZukan() {
   const focusVisual = document.getElementById('toho-zukan-focus-visual');
   const focusName = document.getElementById('toho-zukan-focus-name');
   const focusInfo = document.getElementById('toho-zukan-focus-info');
+
   focusVisual.className = 'focus-gem empty';
   focusVisual.style.backgroundColor = '';
-  focusName.textContent = '色を選択してください';
+  focusName.textContent = '宝石を選択してください';
   focusName.style.color = '#fff';
-  focusInfo.textContent = '目標色: ---';
+  focusInfo.textContent = '最高純度: ---%';
+  focusInfo.style.color = '#55ff55';
 
   let discoveredCount = 0;
-  const total = Object.keys(state.tohoZukanData).length;
+  const totalGems = Object.keys(state.tohoZukanData).length;
 
-  for (let lv = 1; lv <= 12; lv++) {
-    const entries = Object.values(state.tohoZukanData).filter(e => e.ref.level === lv);
-    if (entries.length === 0) continue;
-    const unlocked = lv <= state.alchemyLevel;
-    const disc = entries.filter(e => e.discovered).length;
-    discoveredCount += disc;
+  const groupedGems = {
+    "Legendary": [],
+    "Epic": [],
+    "Rare": [],
+    "Uncommon": [],
+    "Common": []
+  };
+
+  Object.values(state.tohoZukanData).forEach(entry => {
+    const rarity = entry.ref.rarity || "Common";
+    if (groupedGems[rarity]) {
+      groupedGems[rarity].push(entry);
+    }
+    if (entry.discovered) discoveredCount++;
+  });
+
+  const rarityOrder = ["Legendary", "Epic", "Rare", "Uncommon", "Common"];
+  rarityOrder.forEach(rarity => {
+    const gemsInRarity = groupedGems[rarity];
+    if (gemsInRarity.length === 0) return;
 
     const section = document.createElement('div');
-    section.className = 'rarity-section';
-    section.style.background = 'radial-gradient(circle at 50% 50%, #1d2b3a 0%, #0a1017 100%)';
+    section.className = `rarity-section section-${rarity}`;
 
     const header = document.createElement('div');
-    header.className = 'rarity-header';
-    header.style.color = unlocked ? '#9fd0ff' : '#777777';
-    header.textContent = unlocked ? `[バッチ${lv}] 解読済み ${disc} / ${entries.length}` : `[バッチ${lv}] 錬金術Lv.${lv}で解読`;
+    header.className = `rarity-header header-${rarity}`;
+    const discInRarity = gemsInRarity.filter(g => g.discovered).length;
+    header.textContent = `[${rarity}] ${discInRarity} / ${gemsInRarity.length}`;
     section.appendChild(header);
 
-    if (unlocked) {
-      const grid = document.createElement('div');
-      grid.className = 'rarity-grid';
-      entries.forEach(entry => {
-        const slot = document.createElement('div');
-        slot.className = 'zukan-slot';
-        const gem = entry.ref;
+    const grid = document.createElement('div');
+    grid.className = 'rarity-grid';
+
+    gemsInRarity.forEach(entry => {
+      const slot = document.createElement('div');
+      slot.className = 'zukan-slot';
+      const gem = entry.ref;
+
+      if (entry.discovered) {
         const gemEl = document.createElement('div');
         gemEl.className = 'gem-visual';
         gemEl.style.backgroundColor = `rgb(${gem.r}, ${gem.g}, ${gem.b})`;
-        if (!entry.discovered) gemEl.style.filter = 'brightness(0.35)';
         slot.appendChild(gemEl);
+      }
 
-        slot.addEventListener('click', () => {
+      slot.addEventListener('click', () => {
+        if (entry.discovered) {
           focusVisual.className = 'focus-gem';
           focusVisual.style.backgroundColor = `rgb(${gem.r}, ${gem.g}, ${gem.b})`;
           const nameMatch = gem.name.match(/^(.*?)\s*\((.*)\)\s*$/);
@@ -235,30 +257,28 @@ export function renderTohoZukan() {
           else if (gem.rarity === 'Rare') rarityColor = '#55aaff';
           else if (gem.rarity === 'Uncommon') rarityColor = '#88ff88';
 
-          if (entry.discovered) {
-            focusInfo.innerHTML = `<span style="color:${rarityColor}; margin-right:10px;">[${gem.rarity}]</span>最高純度: ${entry.maxPurity}%<br><span style="font-size:0.8rem; color:#a99a86;">目標RGB: (${gem.r}, ${gem.g}, ${gem.b}) / ${entry.bestCarat} ct / 透明度: ${entry.bestClarity}</span>`;
-          } else {
-            focusInfo.innerHTML = `<span style="color:${rarityColor}; margin-right:10px;">[${gem.rarity}]</span>未錬成<br><span style="font-size:0.8rem; color:#a99a86;">目標RGB: (${gem.r}, ${gem.g}, ${gem.b})</span>`;
-          }
-        });
-        grid.appendChild(slot);
+          focusInfo.innerHTML = `<span style="color:${rarityColor}; margin-right:10px;">[${gem.rarity}]</span>最高純度: ${entry.maxPurity}%<br><span style="font-size:0.8rem; color:#a99a86;">${entry.bestCarat} ct / 透明度: ${entry.bestClarity}</span>`;
+        } else {
+          focusVisual.className = 'focus-gem empty';
+          focusVisual.style.backgroundColor = '';
+          focusName.textContent = '？？？';
+          focusName.style.color = '#a99a86';
+          focusInfo.textContent = '最高純度: ---%';
+        }
       });
-      section.appendChild(grid);
-    } else {
-      const p = document.createElement('p');
-      p.style.cssText = 'color: #777777; font-size: 0.9rem; padding: 6px 2px;';
-      p.textContent = `？？？（全${entries.length}色）`;
-      section.appendChild(p);
-    }
+
+      grid.appendChild(slot);
+    });
+
+    section.appendChild(grid);
     container.appendChild(section);
-  }
+  });
 
   const progressEl = document.getElementById('toho-zukan-progress');
   if (progressEl) {
-    progressEl.textContent = `収集率: ${discoveredCount} / ${total}`;
+    progressEl.textContent = `収集率: ${discoveredCount} / ${totalGems}`;
   }
 }
-
 export function checkEnding() {
   if (state.endingSeen) return;
   const mainEntries = Object.values(state.zukanData);

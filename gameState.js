@@ -42,7 +42,7 @@ export const state = {
   labOp: 'mix',
   tohoLabInventory: [],   // 東方融合用のクズ石（通常分とは完全分離）
   tohoLabSelection: [],
-  tohoZukanData: {},      // 東方の宝石の色図鑑（別冊）
+  tohoZukanData: {},      // 東方の宝石図録
   employees: 0,
   nobleQuestState: 0,
   countessQuestState: 0,

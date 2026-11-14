@@ -346,7 +346,8 @@
     
     <div id="zukan-list-container"></div>
     
-    <div style="display: flex; justify-content: flex-end; padding: 0 10px 10px 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 10px 10px 10px;">
+      <button id="btn-toho-zukan-open" style="background: linear-gradient(to bottom, #2a4a6b, #1a2f47); color: #d5e9ff; border: 1px solid #68a4e0; padding: 12px 20px; font-size: 1.1rem; visibility: hidden;">📚 東方宝石図録</button>
       <button id="zukan-back-btn" style="background: linear-gradient(to bottom, #5c4734, #3d2f22); color: #e0d5c1; border: 1px solid #8b6b4a; padding: 12px 30px; font-size: 1.1rem;">戻る</button>
     </div>
 
@@ -357,20 +358,20 @@
     </div>
   </div>
 
-  <!-- 東方の色図鑑（別冊）画面 -->
+  <!-- 東方宝石図録画面 -->
   <div id="toho-zukan-screen" class="screen">
-    <h2 class="shop-title" style="margin-top: 5px; font-size: 1.6rem;">東方の色図鑑（別冊）</h2>
+    <h2 class="shop-title" style="margin-top: 5px; font-size: 1.6rem;">東方宝石図録</h2>
     <div id="toho-zukan-progress" style="color: #c4b5a2; font-size: 1.1rem; margin-bottom: 10px;">収集率: 0 / 465</div>
     <div id="toho-zukan-focus-area">
       <div id="toho-zukan-focus-visual" class="focus-gem empty"></div>
-      <div id="toho-zukan-focus-name">色を選択してください</div>
-      <div id="toho-zukan-focus-info">目標色: ---</div>
+      <div id="toho-zukan-focus-name">宝石を選択してください</div>
+      <div id="toho-zukan-focus-info">最高純度: ---%</div>
     </div>
 
     <div id="toho-zukan-list-container"></div>
 
-    <div style="display: flex; justify-content: center; align-items: center; padding: 0 10px;">
-      <button id="toho-zukan-back-btn" style="background: linear-gradient(to bottom, #5c4734, #3d2f22); color: #e0d5c1; border: 1px solid #8b6b4a; padding: 12px 30px; font-size: 1.1rem;">錬金術室に戻る</button>
+    <div style="display: flex; justify-content: flex-end; padding: 0 10px 10px 10px;">
+      <button id="toho-zukan-back-btn" style="background: linear-gradient(to bottom, #5c4734, #3d2f22); color: #e0d5c1; border: 1px solid #8b6b4a; padding: 12px 30px; font-size: 1.1rem;">戻る</button>
     </div>
   </div>
 
@@ -433,7 +434,6 @@
 
       <div id="lab-toho-ui" style="display: none;">
         <button id="btn-buy-kuzu" style="width: 100%; background: linear-gradient(to bottom, #8b4a2a, #5e2f1a); border: 2px solid #e0a468; color: #ffe9d5; padding: 12px; font-size: 1.05rem; border-radius: 8px; margin-bottom: 10px;">🚢 クズ石の補充 (1個 1,000 G / 上限20個)</button>
-        <button id="btn-toho-zukan" style="width: 100%; background: linear-gradient(to bottom, #2a4a6b, #1a2f47); border: 2px solid #68a4e0; color: #d5e9ff; padding: 12px; font-size: 1.05rem; border-radius: 8px; margin-bottom: 10px;">📚 色図鑑（別冊）を見る</button>
       </div>
       <div id="lab-focus-area" style="background: #221a14; padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #5c4734; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); min-height: 150px;">
         <div style="display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 15px;">
