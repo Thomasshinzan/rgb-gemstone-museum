@@ -30,6 +30,40 @@ export function currentFusionFee(isToho) {
 export const TOHO_KUZU_UNIT_PRICE = 1000;
 export const TOHO_LAB_CAP = 20;
 
+// 採掘費用（規模勾配方式・2026-11-14決定）: 費用 = その派遣の粗収入分布の目標赤字率分位点（実測表、40,000試行）
+// 目標赤字率: 自分の鉱山Lv1・長期10分 45% / 自分の鉱山Lv2 30% / 特別20分 30% / 長期50分 18% / 特別60分・隣国 15%
+// ボタ山は救済措置のため費用0のまま。スライダー派遣は測定点の間を線形補間する。
+export const MINING_FEE_TABLE = {
+  1: { lv1: 12224, lv2: null, long10: 20281, long50: 97621, noble20: null, noble60: null, neighbor: null },
+  2: { lv1: 15109, lv2: null, long10: 22302, long50: 107348, noble20: null, noble60: null, neighbor: null },
+  3: { lv1: 18546, lv2: null, long10: 24331, long50: 117118, noble20: 29891, noble60: 92241, neighbor: null },
+  4: { lv1: 26119, lv2: 83137, long10: 28386, long50: 136636, noble20: 34874, noble60: 107615, neighbor: null },
+  5: { lv1: 45619, lv2: 143529, long10: 36499, long50: 175686, noble20: 44840, noble60: 138373, neighbor: 69027 },
+};
+function miningFeeRow() {
+  const rank = Math.min(5, Math.max(1, state.shopRank));
+  return MINING_FEE_TABLE[rank];
+}
+export function miningFeePersonal() {
+  const row = miningFeeRow();
+  return (state.ownMineUpgraded && row.lv2 != null) ? row.lv2 : row.lv1;
+}
+export function miningFeeLong(minutes) {
+  const row = miningFeeRow();
+  const t = Math.min(1, Math.max(0, (minutes - 10) / 40));
+  return Math.round(row.long10 + (row.long50 - row.long10) * t);
+}
+export function miningFeeNoble(minutes) {
+  const rank = Math.min(5, Math.max(3, state.shopRank));
+  const row = MINING_FEE_TABLE[rank];
+  const t = Math.min(1, Math.max(0, (minutes - 20) / 40));
+  return Math.round(row.noble20 + (row.noble60 - row.noble20) * t);
+}
+export function miningFeeNeighbor() {
+  const row = miningFeeRow();
+  return row.neighbor != null ? row.neighbor : 69027;
+}
+
 export const state = {
   money: 15000,
   shopRank: 1,

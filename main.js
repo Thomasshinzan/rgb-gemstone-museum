@@ -1,4 +1,4 @@
-import { state, RANK_DATA, saveData, loadSaveData, BOOK_PRICE, TOHO_KUZU_UNIT_PRICE, TOHO_LAB_CAP, getFusionOp } from './gameState.js';
+import { state, RANK_DATA, saveData, loadSaveData, BOOK_PRICE, TOHO_KUZU_UNIT_PRICE, TOHO_LAB_CAP, getFusionOp, miningFeePersonal, miningFeeLong, miningFeeNoble, miningFeeNeighbor } from './gameState.js';
 import { 
   showScreen, showCustomAlert, updateShopUI, renderZukan, 
   checkNobleQuest, checkCountessQuest, updateMineMenuUI, 
@@ -352,14 +352,13 @@ document.getElementById('btn-mine-personal').addEventListener('click', () => {
   const bonus = 1.0 + (state.employees * 0.1);
   let minGems = Math.floor(8 * bonus);
   let maxGems = Math.ceil(12 * bonus);
-  let cost = 5000;
-  let poolType = 'personal_lv1'; 
+  const cost = miningFeePersonal();
+  let poolType = 'personal_lv1';
 
   if (state.ownMineUpgraded) {
     minGems *= 2;
     maxGems *= 2;
-    cost = 10000;
-    poolType = 'all'; 
+    poolType = 'all';
   }
 
   startMiningProcess(cost, minGems, maxGems, 'personal', '自分の鉱山', 5, poolType);
@@ -369,20 +368,20 @@ document.getElementById('btn-mine-botayama').addEventListener('click', () => sta
 
 document.getElementById('btn-mine-long').addEventListener('click', () => {
   const minutes = parseInt(document.getElementById('long-expedition-slider').value, 10);
-  const cost = (minutes / 10) * 2500; 
-  const baseGems = minutes * 1.5; 
+  const cost = miningFeeLong(minutes);
+  const baseGems = minutes * 1.5;
   startMiningProcess(cost, Math.floor(baseGems * 0.9), Math.ceil(baseGems * 1.1), 'long', '長期遠征', minutes * 60, 'mineId1');
 });
 
 document.getElementById('btn-mine-noble').addEventListener('click', () => {
   const minutes = parseInt(document.getElementById('noble-expedition-slider').value, 10);
-  const cost = (minutes / 20) * 5000;
+  const cost = miningFeeNoble(minutes);
   const baseGems = minutes * 1.2;
   startMiningProcess(cost, Math.floor(baseGems * 0.9), Math.ceil(baseGems * 1.1), 'noble', '貴族の私有鉱山', minutes * 60, 'mineId2');
 });
 
 document.getElementById('btn-mine-neighbor').addEventListener('click', () => {
-  startMiningProcess(10000, 11, 50, 'neighbor', '隣国との独占取引', 60 * 60, 'all');
+  startMiningProcess(miningFeeNeighbor(), 11, 50, 'neighbor', '隣国との独占取引', 60 * 60, 'all');
 });
 
 // --- リセットとセーブのイベント ---
