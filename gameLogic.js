@@ -566,6 +566,9 @@ export function startTohoFusionProcess(gemA, gemB, opId) {
         
         let msg = `✨ <b>錬成成功！</b><br><br>見事な <b>${hitGem.name}</b> が誕生しました！`;
         if (isNew) msg += `<span class="badge-new">New!!</span>`;
+        // 献上されて手元に残らないため、生成時のダイアログで姿とデータを必ず見せる（鑑定所・通常融合と同形式）
+        msg += `<br><span class="focus-gem" style="display: inline-block; background-color: rgb(${hitGem.r}, ${hitGem.g}, ${hitGem.b}); margin: 12px 0 2px;"></span>`;
+        msg += `<br><span style="color: #c4b5a2;">${newCarat} ct | 透明度: ${newClarity} | 純度: ${newPurity}%</span>`;
         msg += `<br><br>完成した宝石は、東方宝石図録に登録され、<b>王家に献上されました</b>。`;
         const xpMultLabel = xpMult === 3 ? '（最高純度更新ボーナス ×3）' : (xpMult === 2 ? '（図鑑登録済みボーナス ×2）' : '');
         msg += `<br><br>⚗️ <b>錬金術XP +${xpGain}</b>${xpMultLabel}`;
