@@ -279,6 +279,58 @@ export function renderTohoZukan() {
     progressEl.textContent = `収集率: ${discoveredCount} / ${totalGems}`;
   }
 }
+// --- エンディング（両図鑑完成時に1回だけ。メッセージ表示のみの演出） ---
+const ENDING_PAGES = [
+  `👑 <b>王宮からの使者</b><br><br>王立宝石図録と東方宝石図録――その両方を完成させた宝石商がいる。<br>報せは王都を駆け巡り、やがて店の前に王宮の馬車が止まりました。<br><br>「王がお呼びです。直ちに王宮へ」`,
+  `🏰 <b>謁見</b><br><br>王の間に通され、集めた宝石の記録が読み上げられていきます。<br>王国の宝石141種、東方の宝石465種。すべてをその手で集め、見極め、記録した功績に、王は深く頷きました。<br><br>「そなたはまさしく、この国の宝を見極める者――<b>『王国の宝石』</b>の称号を授けよう」`,
+  `💐 <b>思いがけない沙汰</b><br><br>その席で、思いがけない沙汰が下ります。<br>その功績を認められ、<b>王家の末娘である王女との結婚</b>が許されたのです。<br><br>色とりどりの宝石に囲まれたこの店に、新しい家族の笑い声が加わる日も近いでしょう。`,
+  `✨ <b>物語の結び</b><br><br>こうして、宝石商の物語は一つの結末を迎えました。<br><br>――しかし、店の灯りは消えません。<br>純度100%の輝きを求める旅は、まだ続いていきます。`
+];
+let endingPageIndex = -1;
+let endingPending = false;
+
+export function hasPendingEnding() { return endingPending; }
+
+function endingBlockedByOverlay() {
+  const alertOverlay = document.getElementById('custom-alert-overlay');
+  const choiceOverlay = document.getElementById('fusion-choice-overlay');
+  return (alertOverlay && alertOverlay.style.display === 'flex')
+      || (choiceOverlay && choiceOverlay.style.display === 'flex');
+}
+
+// 完了の瞬間に開いているダイアログ（融合結果など）を読み終えてからエンディングを見せる
+export function flushPendingEnding() {
+  if (!endingPending) return;
+  if (endingBlockedByOverlay()) return;
+  endingPending = false;
+  showEndingSequence();
+}
+
+export function showEndingSequence() {
+  state.endingSeen = true;
+  saveData();
+  endingPageIndex = 0;
+  renderEndingPage();
+  document.getElementById('ending-overlay').style.display = 'flex';
+}
+
+function renderEndingPage() {
+  document.getElementById('ending-msg').innerHTML = ENDING_PAGES[endingPageIndex];
+  document.getElementById('btn-ending-next').textContent =
+    endingPageIndex >= ENDING_PAGES.length - 1 ? '店に戻る' : '次へ';
+}
+
+export function advanceEnding() {
+  if (endingPageIndex < 0) return;
+  endingPageIndex++;
+  if (endingPageIndex >= ENDING_PAGES.length) {
+    endingPageIndex = -1;
+    document.getElementById('ending-overlay').style.display = 'none';
+  } else {
+    renderEndingPage();
+  }
+}
+
 export function checkEnding() {
   if (state.endingSeen) return;
   const mainEntries = Object.values(state.zukanData);
@@ -286,9 +338,8 @@ export function checkEnding() {
   if (mainEntries.length === 0 || tohoEntries.length === 0) return;
   if (!mainEntries.every(e => e.discovered)) return;
   if (!tohoEntries.every(e => e.discovered)) return;
-  state.endingSeen = true;
-  saveData();
-  showCustomAlert(`👑 <b>【エンディング】</b><br><br>王立宝石図録と東方の色図鑑、そのすべてを完成させたあなたは、<br>今や内外から <b>「王国の宝石」</b> と称賛される存在となりました。<br><br>その功績を認められ、<b>王家の末娘である王女との結婚</b>が許されたのです。<br><br>宝石商の物語は、ここに完結しました。<br>――しかし、純度100%の輝きを求める旅は、まだ続いていきます。`, true);
+  endingPending = true;
+  flushPendingEnding();
 }
 
 export function updateLongExpeditionUI() {
@@ -588,6 +639,7 @@ export function showFusionChoice(gem, msgHtml) {
       overlay.style.display = 'none';
       renderLab();
       renderWorkshop();
+      flushPendingEnding();
     });
     document.getElementById('btn-fusion-sell').addEventListener('click', () => {
       if (!pendingFusionGem) return;
@@ -597,6 +649,7 @@ export function showFusionChoice(gem, msgHtml) {
       updateShopUI();
       overlay.style.display = 'none';
       renderLab();
+      flushPendingEnding();
     });
   }
   overlay.style.display = 'flex';
