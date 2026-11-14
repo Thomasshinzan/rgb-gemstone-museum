@@ -418,7 +418,7 @@ document.getElementById('confirm-no-btn').addEventListener('click', () => {
 
 document.getElementById('confirm-yes-btn').addEventListener('click', () => {
   localStorage.clear();
-  state.money = 15000;
+  state.money = 60000;
   state.shopRank = 1;
   state.alchemyLevel = 1;
   state.alchemyXP = 0;
@@ -502,7 +502,7 @@ document.getElementById('btn-do-import').addEventListener('click', () => {
     const saveStr = document.getElementById('save-data-text').value.trim();
     if (!saveStr) return;
     const saveObj = JSON.parse(decodeURIComponent(atob(saveStr)));
-    state.money = saveObj.money || 15000;
+    state.money = saveObj.money || 60000;
     state.shopRank = saveObj.shopRank || 1;
     state.alchemyLevel = saveObj.alchemyLevel || 1;
     state.alchemyXP = saveObj.alchemyXP || 0;

@@ -53,8 +53,10 @@ export function workshopCraftMinutes(item) {
 // 採掘費用（規模勾配方式・2026-11-14決定）: 費用 = その派遣の粗収入分布の目標赤字率分位点（実測表、40,000試行）
 // 目標赤字率: 自分の鉱山Lv1・長期10分 45% / 自分の鉱山Lv2 30% / 特別20分 30% / 長期50分 18% / 特別60分・隣国 15%
 // ボタ山は救済措置のため費用0のまま。スライダー派遣は測定点の間を線形補間する。
+// 例外: ランク1の長期10分は実測20,281だと初期資金（60,000 G）での立ち上がりが窮屈なため、
+// 2026-11-14のテストプレイを受けて 20,000 G に丸めた（初期資金も 15,000 → 60,000 G に変更）。
 export const MINING_FEE_TABLE = {
-  1: { lv1: 12224, lv2: null, long10: 20281, long50: 97621, noble20: null, noble60: null, neighbor: null },
+  1: { lv1: 12224, lv2: null, long10: 20000, long50: 97621, noble20: null, noble60: null, neighbor: null },
   2: { lv1: 15109, lv2: null, long10: 22302, long50: 107348, noble20: null, noble60: null, neighbor: null },
   3: { lv1: 18546, lv2: null, long10: 24331, long50: 117118, noble20: 29891, noble60: 92241, neighbor: null },
   4: { lv1: 26119, lv2: 83137, long10: 28386, long50: 136636, noble20: 34874, noble60: 107615, neighbor: null },
@@ -85,7 +87,7 @@ export function miningFeeNeighbor() {
 }
 
 export const state = {
-  money: 15000,
+  money: 60000,
   shopRank: 1,
   alchemyLevel: 1,
   alchemyXP: 0,
