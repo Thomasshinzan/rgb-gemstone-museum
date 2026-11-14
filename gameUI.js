@@ -1,4 +1,4 @@
-import { state, RANK_DATA, saveData, ALCHEMY_XP_TABLE, ALCHEMY_MAX_LEVEL, FUSION_OPS, getFusionOp, BOOK_PRICE } from './gameState.js';
+import { state, RANK_DATA, saveData, ALCHEMY_XP_TABLE, ALCHEMY_MAX_LEVEL, FUSION_OPS, getFusionOp, BOOK_PRICE, miningFeePersonal, miningFeeLong, miningFeeNoble, miningFeeNeighbor } from './gameState.js';
 import { computeFusionRGB } from './gameLogic.js';
 
 export function showScreen(screenEl) {
@@ -294,7 +294,7 @@ export function checkEnding() {
 export function updateLongExpeditionUI() {
   const slider = document.getElementById('long-expedition-slider');
   const minutes = parseInt(slider.value, 10);
-  const cost = (minutes / 10) * 2500; 
+  const cost = miningFeeLong(minutes);
   const baseGems = minutes * 1.5;     
   document.getElementById('long-exp-time').textContent = minutes;
   document.getElementById('long-exp-yield').textContent = `${Math.floor(baseGems * 0.9)}〜${Math.ceil(baseGems * 1.1)}`;
@@ -304,7 +304,7 @@ export function updateLongExpeditionUI() {
 export function updateNobleExpeditionUI() {
   const slider = document.getElementById('noble-expedition-slider');
   const minutes = parseInt(slider.value, 10);
-  const cost = (minutes / 20) * 5000; 
+  const cost = miningFeeNoble(minutes); 
   const baseGems = minutes * 1.2;     
   document.getElementById('noble-exp-time').textContent = minutes;
   document.getElementById('noble-exp-yield').textContent = `${Math.floor(baseGems * 0.9)}〜${Math.ceil(baseGems * 1.1)}`;
@@ -332,13 +332,12 @@ export function updateMineMenuUI() {
   const personalBonus = 1.0 + (state.employees * 0.1);
   let personalMin = Math.floor(8 * personalBonus);
   let personalMax = Math.ceil(12 * personalBonus);
-  let personalCost = 5000;
+  const personalCost = miningFeePersonal();
   let mineDesc = `5秒で素早く探索する。(${personalMin}〜${personalMax}個)`;
 
   if (state.ownMineUpgraded) {
     personalMin *= 2;
     personalMax *= 2;
-    personalCost = 10000;
     mineDesc = `未知の鉱脈も同時に探索する。(すべての宝石に対応)<br><span style="color:#55ff55;">大漁ボーナス: ${personalMin}〜${personalMax}個</span>`;
   }
 
@@ -374,7 +373,7 @@ export function updateMineMenuUI() {
     if (state.activeMissions['neighbor']) {
       btnMineNeighbor.textContent = "🚢 取引進行中 / 鑑定待ち";
     } else {
-      btnMineNeighbor.textContent = "取引実行 (10,000 G)";
+      btnMineNeighbor.textContent = `取引実行 (${miningFeeNeighbor().toLocaleString()} G)`;
     }
   } else {
     neighborTradeContainer.style.display = 'none';
