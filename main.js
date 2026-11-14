@@ -1,4 +1,4 @@
-import { state, RANK_DATA, saveData, loadSaveData, BOOK_PRICE, TOHO_KUZU_UNIT_PRICE, TOHO_LAB_CAP, getFusionOp, miningFeePersonal, miningFeeLong, miningFeeNoble, miningFeeNeighbor } from './gameState.js';
+import { state, RANK_DATA, saveData, loadSaveData, BOOK_PRICE, TOHO_KUZU_UNIT_PRICE, TOHO_LAB_CAP, getFusionOp, miningFeePersonal, miningFeeLong, miningFeeNoble, miningFeeNeighbor, getWorkshopItem, workshopCraftMinutes, grantWorkshopXP } from './gameState.js';
 import { 
   showScreen, showCustomAlert, updateShopUI, renderZukan, 
   checkNobleQuest, checkCountessQuest, updateMineMenuUI, 
@@ -191,17 +191,22 @@ document.getElementById('toho-zukan-back-btn').addEventListener('click', () => {
 
 // --- 工房システムの処理 ---
 document.getElementById('btn-start-craft').addEventListener('click', (e) => {
-  const cost = 1000;
+  const item = getWorkshopItem(state.craftItemType);
+  if (state.workshopLevel < item.unlockLevel) {
+    showCustomAlert(`「${item.name}」は工房Lv.${item.unlockLevel}で解放されます。<br>（現在の工房Lv.${state.workshopLevel}）`);
+    return;
+  }
+  const cost = item.fee;
   if (state.money < cost) {
     showCustomAlert(`資金が足りません。<br>加工の依頼には ${cost.toLocaleString()} G 必要です。`);
     return;
   }
-  
+
   const index = e.target.dataset.index;
   if (index === undefined) return;
-  
+
   const gem = state.inventory[index];
-  
+
   let jpName = gem.name;
   if (gem.name.includes('(')) {
     const parts = gem.name.split(/[()]/).map(s => s.trim()).filter(Boolean);
@@ -210,29 +215,29 @@ document.getElementById('btn-start-craft').addEventListener('click', (e) => {
     else jpName = parts[0];
   }
 
-  const types = ["指輪", "首飾り", "宝冠"];
-  const type = types[Math.floor(Math.random() * types.length)];
-  const resultName = `${jpName}の${type}`;
-  
-  const multiplier = (Math.floor(Math.random() * 21) + 15) / 10;
+  const resultName = `${jpName}の${item.name}`;
+
+  const steps = Math.round((item.multMax - item.multMin) * 10);
+  const multiplier = Math.round((item.multMin + Math.floor(Math.random() * (steps + 1)) / 10) * 10) / 10;
   const resultPrice = Math.floor(gem.price * multiplier);
-  
+
   state.money -= cost;
-  state.inventory.splice(index, 1); 
-  
-  const timeSec = 60 * 60; 
+  state.inventory.splice(index, 1);
+
+  const timeSec = workshopCraftMinutes(item) * 60;
   state.activeCraft = {
     endTime: Date.now() + (timeSec * 1000),
     totalSec: timeSec,
     gem: gem,
+    itemType: item.id,
     resultName: resultName,
     resultPrice: resultPrice,
     multiplier: multiplier
   };
-  
+
   saveData();
   updateShopUI();
-  renderWorkshop(); 
+  renderWorkshop();
 });
 
 document.getElementById('btn-collect-craft').addEventListener('click', () => {
@@ -242,15 +247,27 @@ document.getElementById('btn-collect-craft').addEventListener('click', () => {
   const name = state.activeCraft.resultName;
   const sourceGem = state.activeCraft.gem;
   state.money += price;
-  state.activeCraft = null; 
-  
-  checkMineUpgradeQuest(); 
-  
+  state.activeCraft = null;
+
+  const xpGain = Math.floor(price / 100);
+  const wsEvents = grantWorkshopXP(xpGain);
+
+  checkMineUpgradeQuest();
+
   saveData();
   updateShopUI();
   renderWorkshop();
-  
-  showCustomAlert(`✨ <b>宝飾品を売却しました！</b><br><br>見事な <b>${name}</b> が高値で取引され、<br><b style="color:#f4d03f; font-size:1.3rem;">${price.toLocaleString()} G</b> の資金を得ました！`);
+
+  showCustomAlert(`✨ <b>宝飾品を売却しました！</b><br><br>見事な <b>${name}</b> が高値で取引され、<br><b style="color:#f4d03f; font-size:1.3rem;">${price.toLocaleString()} G</b> の資金を得ました！<br><br>🔨 工房経験値 <b>+${xpGain} XP</b>`);
+  if (wsEvents.levelsGained.length > 0) {
+    const newLevel = wsEvents.levelsGained[wsEvents.levelsGained.length - 1];
+    let unlockText = '';
+    if (newLevel === 2) unlockText = '<br>新しい品目「首飾り」が作れるようになりました！';
+    else if (newLevel === 3) unlockText = '<br>工房に弟子が加わりました！全品目の加工時間が短くなります。';
+    else if (newLevel === 4) unlockText = '<br>新しい品目「宝冠」が作れるようになりました！';
+    else if (newLevel === 5) unlockText = '<br>職人の技が極まり、全品目の加工時間がさらに短くなります。';
+    showCustomAlert(`🎉 <b>工房レベルアップ！</b><br><br>工房が <b>Lv.${newLevel}</b> になりました！${unlockText}`, true);
+  }
   if (state.countessQuestState === 1 && sourceGem && sourceGem.purity >= 90) {
     state.countessQuestState = 2;
     state.neighborTradeUnlocked = true;
@@ -413,6 +430,9 @@ document.getElementById('confirm-yes-btn').addEventListener('click', () => {
   state.ownMinePurchased = false;
   state.ownMineUpgraded = false;
   state.workshopUnlocked = false;
+  state.workshopLevel = 1;
+  state.workshopXP = 0;
+  state.craftItemType = 'ring';
   state.activeMissions = {};
   state.activeCraft = null;
   state.inventory = []; 
@@ -444,7 +464,9 @@ document.getElementById('btn-export-save').addEventListener('click', () => {
     ownMinePurchased: state.ownMinePurchased, 
     ownMineUpgraded: state.ownMineUpgraded,
     workshopUnlocked: state.workshopUnlocked,
-    activeMissions: state.activeMissions, 
+    workshopLevel: state.workshopLevel,
+    workshopXP: state.workshopXP,
+    activeMissions: state.activeMissions,
     activeCraft: state.activeCraft,
     inventory: state.inventory, 
     labInventory: state.labInventory, 
@@ -499,6 +521,8 @@ document.getElementById('btn-do-import').addEventListener('click', () => {
     state.ownMinePurchased = saveObj.ownMinePurchased || false;
     state.ownMineUpgraded = saveObj.ownMineUpgraded || false;
     state.workshopUnlocked = saveObj.workshopUnlocked || false;
+    state.workshopLevel = saveObj.workshopLevel || 1;
+    state.workshopXP = saveObj.workshopXP || 0;
     state.activeMissions = saveObj.activeMissions || {};
     state.activeCraft = saveObj.activeCraft || null;
     state.inventory = saveObj.inventory || []; 
