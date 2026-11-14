@@ -30,6 +30,26 @@ export function currentFusionFee(isToho) {
 export const TOHO_KUZU_UNIT_PRICE = 1000;
 export const TOHO_LAB_CAP = 20;
 
+// 工房レベルシステム（2026-11-13設計・2026-11-14実装）: 技の熟練＝品目の解放と時間短縮
+// 経験値 = 完成品の売却額 ÷ 100（受け取り時に付与）。全員Lv1から、遡及なし。
+export const WORKSHOP_MAX_LEVEL = 5;
+export const WORKSHOP_XP_TABLE = { 1: 300, 2: 600, 3: 1000, 4: 1600 };
+export const WORKSHOP_ITEMS = [
+  { id: 'ring', name: '指輪', unlockLevel: 1, baseMinutes: 30, multMin: 1.2, multMax: 2.2, fee: 1000 },
+  { id: 'necklace', name: '首飾り', unlockLevel: 2, baseMinutes: 60, multMin: 1.8, multMax: 3.2, fee: 2000 },
+  { id: 'crown', name: '宝冠', unlockLevel: 4, baseMinutes: 120, multMin: 2.6, multMax: 4.6, fee: 5000 },
+];
+export function getWorkshopItem(id) {
+  return WORKSHOP_ITEMS.find(i => i.id === id) || WORKSHOP_ITEMS[0];
+}
+// 弟子による時間短縮: Lv3で ×2/3、Lv5で ×1/2
+export function workshopTimeFactor() {
+  return state.workshopLevel >= 5 ? 0.5 : (state.workshopLevel >= 3 ? 2 / 3 : 1);
+}
+export function workshopCraftMinutes(item) {
+  return Math.round(item.baseMinutes * workshopTimeFactor());
+}
+
 // 採掘費用（規模勾配方式・2026-11-14決定）: 費用 = その派遣の粗収入分布の目標赤字率分位点（実測表、40,000試行）
 // 目標赤字率: 自分の鉱山Lv1・長期10分 45% / 自分の鉱山Lv2 30% / 特別20分 30% / 長期50分 18% / 特別60分・隣国 15%
 // ボタ山は救済措置のため費用0のまま。スライダー派遣は測定点の間を線形補間する。
@@ -83,7 +103,10 @@ export const state = {
   neighborTradeUnlocked: false,
   ownMinePurchased: false,
   ownMineUpgraded: false,
-  workshopUnlocked: false, 
+  workshopUnlocked: false,
+  workshopLevel: 1,
+  workshopXP: 0,
+  craftItemType: 'ring',   // 工房で選択中の品目（セッションのみ）
   activeMissions: {},
   activeCraft: null,
   zukanData: {},
@@ -107,6 +130,20 @@ export function grantAlchemyXP(gain) {
     }
   }
   if (state.alchemyLevel >= ALCHEMY_MAX_LEVEL) state.alchemyXP = 0;
+  return events;
+}
+
+// 工房XPを加算し、レベルアップを処理する。戻り値: { levelsGained: number[] }
+export function grantWorkshopXP(gain) {
+  const events = { levelsGained: [] };
+  if (state.workshopLevel >= WORKSHOP_MAX_LEVEL || gain <= 0) return events;
+  state.workshopXP += gain;
+  while (state.workshopLevel < WORKSHOP_MAX_LEVEL && state.workshopXP >= WORKSHOP_XP_TABLE[state.workshopLevel]) {
+    state.workshopXP -= WORKSHOP_XP_TABLE[state.workshopLevel];
+    state.workshopLevel++;
+    events.levelsGained.push(state.workshopLevel);
+  }
+  if (state.workshopLevel >= WORKSHOP_MAX_LEVEL) state.workshopXP = 0;
   return events;
 }
 
@@ -136,6 +173,8 @@ export function saveData() {
   localStorage.setItem('rgbMiner_ownMinePurchased', state.ownMinePurchased ? "1" : "0");
   localStorage.setItem('rgbMiner_ownMineUpgraded', state.ownMineUpgraded ? "1" : "0");
   localStorage.setItem('rgbMiner_workshopUnlocked', state.workshopUnlocked ? "1" : "0");
+  localStorage.setItem('rgbMiner_workshopLevel', state.workshopLevel.toString());
+  localStorage.setItem('rgbMiner_workshopXP', state.workshopXP.toString());
   localStorage.setItem('rgbMiner_missions', JSON.stringify(state.activeMissions));
   localStorage.setItem('rgbMiner_activeCraft', JSON.stringify(state.activeCraft));
   localStorage.setItem('rgbMiner_inventory', JSON.stringify(state.inventory)); 
@@ -194,6 +233,10 @@ export function loadSaveData() {
   if (localStorage.getItem('rgbMiner_ownMinePurchased') === "1") state.ownMinePurchased = true;
   if (localStorage.getItem('rgbMiner_ownMineUpgraded') === "1") state.ownMineUpgraded = true;
   if (localStorage.getItem('rgbMiner_workshopUnlocked') === "1") state.workshopUnlocked = true;
+  const savedWorkshopLevel = localStorage.getItem('rgbMiner_workshopLevel');
+  if (savedWorkshopLevel !== null) state.workshopLevel = parseInt(savedWorkshopLevel, 10);
+  const savedWorkshopXP = localStorage.getItem('rgbMiner_workshopXP');
+  if (savedWorkshopXP !== null) state.workshopXP = parseInt(savedWorkshopXP, 10);
   
   const savedMissions = localStorage.getItem('rgbMiner_missions');
   if (savedMissions) state.activeMissions = JSON.parse(savedMissions);

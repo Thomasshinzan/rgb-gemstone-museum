@@ -1,4 +1,4 @@
-import { state, RANK_DATA, saveData, ALCHEMY_XP_TABLE, ALCHEMY_MAX_LEVEL, FUSION_OPS, getFusionOp, BOOK_PRICE, miningFeePersonal, miningFeeLong, miningFeeNoble, miningFeeNeighbor } from './gameState.js';
+import { state, RANK_DATA, saveData, ALCHEMY_XP_TABLE, ALCHEMY_MAX_LEVEL, FUSION_OPS, getFusionOp, BOOK_PRICE, miningFeePersonal, miningFeeLong, miningFeeNoble, miningFeeNeighbor, WORKSHOP_ITEMS, WORKSHOP_XP_TABLE, WORKSHOP_MAX_LEVEL, getWorkshopItem, workshopCraftMinutes } from './gameState.js';
 import { computeFusionRGB } from './gameLogic.js';
 
 export function showScreen(screenEl) {
@@ -396,6 +396,37 @@ export function checkMineUpgradeQuest() {
   }
 }
 
+// 工房の品目選択ボタンと加工開始ボタンのラベルを描き直す（宝石の選択状態は壊さない）
+export function updateCraftItemUI() {
+  const container = document.getElementById('craft-item-buttons');
+  if (!container) return;
+  container.innerHTML = '';
+  WORKSHOP_ITEMS.forEach(item => {
+    const unlocked = state.workshopLevel >= item.unlockLevel;
+    const btn = document.createElement('button');
+    btn.dataset.itemId = item.id;
+    if (!unlocked) {
+      btn.textContent = `${item.name} 🔒Lv.${item.unlockLevel}`;
+      btn.disabled = true;
+      btn.style.cssText = 'background:#2a211a; color:#8a7a66; border:1px solid #4a3929; padding:8px 12px; font-size:0.95rem; border-radius:6px;';
+    } else {
+      const selected = state.craftItemType === item.id;
+      btn.innerHTML = `${item.name}${selected ? ' ✔' : ''}<br><span style="font-size:0.8rem;">${workshopCraftMinutes(item)}分 / ×${item.multMin}〜${item.multMax} / ${item.fee.toLocaleString()} G</span>`;
+      btn.style.cssText = selected
+        ? 'background:linear-gradient(to bottom,#8b1e1e,#5a1111); color:#f4d03f; border:2px solid #d4af37; padding:8px 12px; font-size:0.95rem; border-radius:6px;'
+        : 'background:#221a14; color:#e0d5c1; border:1px solid #8b6b4a; padding:8px 12px; font-size:0.95rem; border-radius:6px;';
+      btn.addEventListener('click', () => {
+        state.craftItemType = item.id;
+        updateCraftItemUI();
+      });
+    }
+    container.appendChild(btn);
+  });
+  const current = getWorkshopItem(state.craftItemType);
+  const btnStart = document.getElementById('btn-start-craft');
+  if (btnStart) btnStart.textContent = `加工を依頼する (${current.name} ${current.fee.toLocaleString()} G)`;
+}
+
 export function renderWorkshop() {
   const lockedUi = document.getElementById('workshop-locked-ui');
   const activeUi = document.getElementById('workshop-active-ui');
@@ -410,6 +441,13 @@ export function renderWorkshop() {
   activeUi.style.display = 'block';
   document.getElementById('inventory-capacity').textContent = `保管状況: ${state.inventory.length} / 20`;
 
+  const levelInfo = document.getElementById('workshop-level-info');
+  let levelText = state.workshopLevel >= WORKSHOP_MAX_LEVEL
+    ? `🔨 工房Lv.${state.workshopLevel}（最大）`
+    : `🔨 工房Lv.${state.workshopLevel}　XP: ${state.workshopXP} / ${WORKSHOP_XP_TABLE[state.workshopLevel]}`;
+  if (state.workshopLevel >= 3) levelText += '　弟子が加工を手伝っています';
+  levelInfo.textContent = levelText;
+
   const statusContainer = document.getElementById('crafting-status-container');
   const selectContainer = document.getElementById('craft-select-container');
 
@@ -420,7 +458,8 @@ export function renderWorkshop() {
   } else {
     statusContainer.style.display = 'none';
     selectContainer.style.display = 'block';
-    
+    updateCraftItemUI();
+
     const invList = document.getElementById('craft-inventory-list');
     invList.innerHTML = '';
     
