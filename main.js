@@ -4,7 +4,8 @@ import {
   checkNobleQuest, checkCountessQuest, updateMineMenuUI, 
   updateLongExpeditionUI, updateNobleExpeditionUI, 
   checkMineUpgradeQuest, renderWorkshop, updateWorkshopProgress, renderLab, renderTohoZukan,
-  showOpSelect, hideOpSelect, showModeSelect, hideModeSelect
+  showOpSelect, hideOpSelect, showModeSelect, hideModeSelect,
+  flushPendingEnding, advanceEnding
 } from './gameUI.js';
 import { appraiser, startMiningProcess, renderMissions, startFusionProcess, startTohoFusionProcess } from './gameLogic.js';
 
@@ -87,6 +88,11 @@ document.getElementById('mine-select-close-btn').addEventListener('click', () =>
 
 document.getElementById('custom-alert-close-btn').addEventListener('click', () => {
   document.getElementById('custom-alert-overlay').style.display = 'none';
+  flushPendingEnding();
+});
+
+document.getElementById('btn-ending-next').addEventListener('click', () => {
+  advanceEnding();
 });
 
 document.getElementById('long-expedition-slider').addEventListener('input', updateLongExpeditionUI);
