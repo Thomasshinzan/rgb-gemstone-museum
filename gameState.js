@@ -56,34 +56,37 @@ export function workshopCraftMinutes(item) {
 // 例外: ランク1の長期10分は実測20,281だと初期資金（60,000 G）での立ち上がりが窮屈なため、
 // 2026-11-14のテストプレイを受けて 20,000 G に丸めた（初期資金も 15,000 → 60,000 G に変更）。
 export const MINING_FEE_TABLE = {
-  1: { lv1: 12224, lv2: null, long10: 20000, long50: 97621, noble20: null, noble60: null, neighbor: null },
-  2: { lv1: 15109, lv2: null, long10: 22302, long50: 107348, noble20: null, noble60: null, neighbor: null },
-  3: { lv1: 18546, lv2: null, long10: 24331, long50: 117118, noble20: 29891, noble60: 92241, neighbor: null },
-  4: { lv1: 26119, lv2: 83137, long10: 28386, long50: 136636, noble20: 34874, noble60: 107615, neighbor: null },
-  5: { lv1: 45619, lv2: 143529, long10: 36499, long50: 175686, noble20: 44840, noble60: 138373, neighbor: 69027 },
+  1: { lv1: 12000, lv2: null, long10: 20000, long50: 98000, noble20: null, noble60: null, neighbor: null },
+  2: { lv1: 15000, lv2: null, long10: 22000, long50: 107000, noble20: null, noble60: null, neighbor: null },
+  3: { lv1: 19000, lv2: null, long10: 24000, long50: 117000, noble20: 30000, noble60: 92000, neighbor: null },
+  4: { lv1: 26000, lv2: 83000, long10: 28000, long50: 137000, noble20: 35000, noble60: 108000, neighbor: null },
+  5: { lv1: 46000, lv2: 144000, long10: 36000, long50: 176000, noble20: 45000, noble60: 138000, neighbor: 69000 },
 };
+// 費用は表示の分かりやすさのため1,000 G単位に丸める（2026-11-15・項目38）。
+// 補間で生じる中間値も、ヘルパー側で同じく1,000 G単位に丸める。
+export function roundFee(v) { return Math.round(v / 1000) * 1000; }
 function miningFeeRow() {
   const rank = Math.min(5, Math.max(1, state.shopRank));
   return MINING_FEE_TABLE[rank];
 }
 export function miningFeePersonal() {
   const row = miningFeeRow();
-  return (state.ownMineUpgraded && row.lv2 != null) ? row.lv2 : row.lv1;
+  return roundFee((state.ownMineUpgraded && row.lv2 != null) ? row.lv2 : row.lv1);
 }
 export function miningFeeLong(minutes) {
   const row = miningFeeRow();
   const t = Math.min(1, Math.max(0, (minutes - 10) / 40));
-  return Math.round(row.long10 + (row.long50 - row.long10) * t);
+  return roundFee(row.long10 + (row.long50 - row.long10) * t);
 }
 export function miningFeeNoble(minutes) {
   const rank = Math.min(5, Math.max(3, state.shopRank));
   const row = MINING_FEE_TABLE[rank];
   const t = Math.min(1, Math.max(0, (minutes - 20) / 40));
-  return Math.round(row.noble20 + (row.noble60 - row.noble20) * t);
+  return roundFee(row.noble20 + (row.noble60 - row.noble20) * t);
 }
 export function miningFeeNeighbor() {
   const row = miningFeeRow();
-  return row.neighbor != null ? row.neighbor : 69027;
+  return roundFee(row.neighbor != null ? row.neighbor : 69000);
 }
 
 export const state = {
