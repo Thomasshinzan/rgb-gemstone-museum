@@ -373,8 +373,8 @@ document.getElementById('btn-buy-mine').addEventListener('click', () => {
 
 document.getElementById('btn-mine-personal').addEventListener('click', () => {
   const bonus = 1.0 + (state.employees * 0.1);
-  let minGems = Math.floor(8 * bonus);
-  let maxGems = Math.ceil(12 * bonus);
+  let minGems = Math.floor(10 * bonus);
+  let maxGems = Math.ceil(15 * bonus);
   const cost = miningFeePersonal();
   let poolType = 'personal_lv1';
 
