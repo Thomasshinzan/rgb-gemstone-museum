@@ -772,7 +772,6 @@ export function renderLab() {
     alchemyInfo.textContent = state.alchemyLevel >= ALCHEMY_MAX_LEVEL
       ? `⚗️ 錬金術Lv.${state.alchemyLevel}（MAX）`
       : `⚗️ 錬金術Lv.${state.alchemyLevel}　XP: ${state.alchemyXP} / ${ALCHEMY_XP_TABLE[state.alchemyLevel]}`;
-    if (state.bookObtained) alchemyInfo.textContent += '　📖 錬金術書 入手済み';
   }
   // 通常 / 東方モード切替まわりの表示
   const isToho = state.labMode === 'toho';
