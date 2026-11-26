@@ -196,6 +196,19 @@ document.getElementById('toho-zukan-back-btn').addEventListener('click', () => {
 });
 
 // --- 工房システムの処理 ---
+document.getElementById('btn-sell-stored').addEventListener('click', (e) => {
+  const index = parseInt(e.target.dataset.index, 10);
+  const gem = state.inventory[index];
+  if (!gem) return;
+  state.inventory.splice(index, 1);
+  state.money += gem.price;
+  saveData();
+  updateShopUI();
+  renderWorkshop();
+  showCustomAlert(`💰 <b>【${gem.name}】を売却しました！</b><br><br><b style="color:#f4d03f;">${gem.price.toLocaleString()} G</b> の資金を得ました。`);
+});
+
+// --- 工房システムの処理 ---
 document.getElementById('btn-start-craft').addEventListener('click', (e) => {
   const item = getWorkshopItem(state.craftItemType);
   if (state.workshopLevel < item.unlockLevel) {
