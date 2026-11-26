@@ -25,6 +25,54 @@ export class Appraiser {
     }
   }
 
+  // レアリティごとの許容誤差（RGB距離の tolerance）
+  _tolerance(rarity) {
+    switch(rarity) {
+      case "Common": return 32;
+      case "Uncommon": return 28;
+      case "Rare": return 24;
+      case "Epic": return 16;
+      case "Legendary": return 8;
+      default: return 20;
+    }
+  }
+
+  // 宝石との距離から品質（純度・カラット・透明度・価格）を決定する。通常鑑定と共通のロジック
+  _rollQuality(gem, dist, tol) {
+    const maxDist = tol * Math.sqrt(3);
+    let purity = Math.floor(100 - (dist / maxDist) * 50);
+    if (purity > 100) purity = 100;
+    if (purity < 50) purity = 50;
+
+    const caratNum = (Math.random() * 3.0) + 0.5;
+    const carat = caratNum.toFixed(2);
+
+    const clarities = ["FL", "IF", "VVS", "VS", "SI", "I"];
+    const clarityIndex = Math.floor(Math.random() * Math.random() * clarities.length);
+    const clarity = clarities[clarities.length - 1 - clarityIndex];
+
+    let qualityMultiplier = 1.0;
+    if (clarity === "FL" || clarity === "IF") qualityMultiplier *= 1.5;
+    else if (clarity === "SI") qualityMultiplier *= 0.8;
+    else if (clarity === "I") qualityMultiplier *= 0.5;
+
+    qualityMultiplier *= (purity / 100);
+
+    let rarityMultiplier = 1.0;
+    switch(gem.rarity) {
+      case "Uncommon": rarityMultiplier = 1.5; break;
+      case "Rare": rarityMultiplier = 2.0; break;
+      case "Epic": rarityMultiplier = 3.0; break;
+      case "Legendary": rarityMultiplier = 4.0; break;
+      case "Common":
+      default: rarityMultiplier = 1.0; break;
+    }
+
+    let price = Math.floor(gem.basePrice * caratNum * qualityMultiplier * rarityMultiplier);
+    if (price < 10) price = 10;
+    return { purity, carat, clarity, price };
+  }
+
   // 💡 修正: 引数を poolType に一本化
   appraiseOne(poolType = 'mineId1', forceFail = false) {
     if (forceFail) {
@@ -62,20 +110,9 @@ export class Appraiser {
 
     if (!pool || pool.length === 0) return this.createKuzu(r, g, b);
 
-    const getTolerance = (rarity) => {
-      switch(rarity) {
-        case "Common": return 32;
-        case "Uncommon": return 28;    
-        case "Rare": return 24;      
-        case "Epic": return 16;      
-        case "Legendary": return 8;  
-        default: return 20;
-      }
-    };
-
     let matchedGems = [];
     pool.forEach(gem => {
-      const tol = getTolerance(gem.rarity);
+      const tol = this._tolerance(gem.rarity);
       
       if (Math.abs(r - gem.r) <= tol && Math.abs(g - gem.g) <= tol && Math.abs(b - gem.b) <= tol) {
         const dist = Math.sqrt(Math.pow(r - gem.r, 2) + Math.pow(g - gem.g, 2) + Math.pow(b - gem.b, 2));
@@ -93,42 +130,34 @@ export class Appraiser {
     const dist = hitMatch.dist;
     const tol = hitMatch.tol;
 
-    const maxDist = tol * Math.sqrt(3); 
-    let purity = Math.floor(100 - (dist / maxDist) * 50);
-    if (purity > 100) purity = 100;
-    if (purity < 50) purity = 50;
-
-    const caratNum = (Math.random() * 3.0) + 0.5;
-    const carat = caratNum.toFixed(2);
-
-    const clarities = ["FL", "IF", "VVS", "VS", "SI", "I"];
-    const clarityIndex = Math.floor(Math.random() * Math.random() * clarities.length);
-    const clarity = clarities[clarities.length - 1 - clarityIndex];
-
-    let qualityMultiplier = 1.0;
-    if (clarity === "FL" || clarity === "IF") qualityMultiplier *= 1.5;
-    else if (clarity === "SI") qualityMultiplier *= 0.8;
-    else if (clarity === "I") qualityMultiplier *= 0.5;
-    
-    qualityMultiplier *= (purity / 100);
-
-    let rarityMultiplier = 1.0;
-    switch(hitGem.rarity) {
-      case "Uncommon": rarityMultiplier = 1.5; break;
-      case "Rare": rarityMultiplier = 2.0; break;
-      case "Epic": rarityMultiplier = 3.0; break;
-      case "Legendary": rarityMultiplier = 4.0; break;
-      case "Common":
-      default: rarityMultiplier = 1.0; break;
-    }
-
-    let finalPrice = Math.floor(hitGem.basePrice * caratNum * qualityMultiplier * rarityMultiplier);
-    if (finalPrice < 10) finalPrice = 10; 
+    const q = this._rollQuality(hitGem, dist, tol);
 
     return {
       isKuzu: false, id: hitGem.id, name: hitGem.name,
       r: hitGem.r, g: hitGem.g, b: hitGem.b, rarity: hitGem.rarity,
-      carat: carat, clarity: clarity, purity: purity, price: finalPrice
+      carat: q.carat, clarity: q.clarity, purity: q.purity, price: q.price
+    };
+  }
+
+  // 特定の宝石1種について、通常採掘と同じ品質決定ロジックで個体を生成する（冒険者の持ち込み用）
+  // 宝石のRGBを中心に許容誤差の範囲でランダムな点を振り、その距離から品質を決める
+  appraiseSpecific(gem) {
+    const tol = this._tolerance(gem.rarity);
+    const rollChannel = (base) => {
+      const v = Math.round(base + (Math.random() * 2 - 1) * tol);
+      return Math.max(0, Math.min(255, v));
+    };
+    const r = rollChannel(gem.r);
+    const g = rollChannel(gem.g);
+    const b = rollChannel(gem.b);
+    const dist = Math.sqrt(Math.pow(r - gem.r, 2) + Math.pow(g - gem.g, 2) + Math.pow(b - gem.b, 2));
+
+    const q = this._rollQuality(gem, dist, tol);
+
+    return {
+      isKuzu: false, id: gem.id, name: gem.name,
+      r: gem.r, g: gem.g, b: gem.b, rarity: gem.rarity,
+      carat: q.carat, clarity: q.clarity, purity: q.purity, price: q.price
     };
   }
 

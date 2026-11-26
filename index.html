@@ -170,6 +170,18 @@
           </button>
         </div>
 
+        <div id="adventurer-container" style="display: none; background: #1a1410; border: 1px solid #d4af37; border-radius: 6px; padding: 15px; text-align: left;">
+          <div style="color: #f4d03f; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px;">🧭 冒険者の持ち込み</div>
+          <div style="color: #c4b5a2; font-size: 0.95rem; margin-bottom: 10px;">各地を渡り歩く冒険者が、まだ見ぬ宝石を持ち込んできた。<br>鑑定額の10倍で買い取ることができる。</div>
+          <div style="display: flex; justify-content: space-between; color: #e0d5c1; font-size: 0.9rem; margin-bottom: 15px;">
+            <span>対象: 未発見の宝石のみ</span>
+            <span>残り: <span id="adventurer-remain">-</span> 種類</span>
+          </div>
+          <button id="btn-adventurer" class="modal-btn" style="width: 100%; background: linear-gradient(to bottom, #b8860b, #8b6508); color: #fff8e1; padding: 10px; border: 1px solid #f4d03f;">
+            持ち込み品を見る
+          </button>
+        </div>
+
         <button id="btn-mine-botayama" class="modal-btn" style="background: linear-gradient(to bottom, #4a3929, #2d2319); color: #e0d5c1; text-align: left; padding: 15px;">
           ⛏️ 廃鉱のボタ山 (無料)<br>
           <span style="font-size: 0.9rem; font-weight: normal; color: #a99a86; display: block; margin-top: 5px;">クズ石ばかりだが5秒で拾える。(3〜5個)</span>
@@ -204,6 +216,22 @@
       <div class="modal-btn-group">
         <button id="book-confirm-no" class="modal-btn" style="background: linear-gradient(to bottom, #5c4734, #3d2f22); color: #e0d5c1;">やめておく</button>
         <button id="book-confirm-yes" class="modal-btn" style="background: linear-gradient(to bottom, #6a4a8b, #452a5e); color: #f0e6ff;">対価を払う</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="adventurer-confirm-overlay" class="modal-overlay">
+    <div class="modal-box">
+      <h3 style="color: #f4d03f; margin-top: 0;">🧭 冒険者の持ち込み</h3>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div id="adventurer-choice-visual" class="focus-gem" style="margin-bottom: 10px;"></div>
+        <div id="adventurer-choice-name" style="font-size: 1.2rem; font-weight: bold; color: #d4af37;"></div>
+        <div id="adventurer-choice-stats" style="color: #c4b5a2; margin: 5px 0;"></div>
+      </div>
+      <p id="adventurer-confirm-msg" style="font-size: 1.1rem; margin-bottom: 0; line-height: 1.6;"></p>
+      <div class="modal-btn-group">
+        <button id="adventurer-confirm-no" class="modal-btn" style="background: linear-gradient(to bottom, #5c4734, #3d2f22); color: #e0d5c1;">見送る</button>
+        <button id="adventurer-confirm-yes" class="modal-btn" style="background: linear-gradient(to bottom, #b8860b, #8b6508); color: #fff8e1;">買い取る</button>
       </div>
     </div>
   </div>

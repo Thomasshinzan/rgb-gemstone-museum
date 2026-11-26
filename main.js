@@ -1,7 +1,7 @@
 import { state, RANK_DATA, saveData, loadSaveData, BOOK_PRICE, TOHO_KUZU_UNIT_PRICE, TOHO_LAB_CAP, getFusionOp, miningFeePersonal, miningFeeLong, miningFeeNoble, miningFeeNeighbor, getWorkshopItem, workshopCraftMinutes, grantWorkshopXP } from './gameState.js';
 import { 
-  showScreen, showCustomAlert, updateShopUI, renderZukan, 
-  checkNobleQuest, checkCountessQuest, updateMineMenuUI, 
+  showScreen, showCustomAlert, updateShopUI, renderZukan, formatMoney,
+  checkNobleQuest, checkCountessQuest, checkEnding, updateMineMenuUI, 
   updateLongExpeditionUI, updateNobleExpeditionUI, 
   checkMineUpgradeQuest, renderWorkshop, updateWorkshopProgress, renderLab, renderTohoZukan,
   showOpSelect, hideOpSelect, showModeSelect, hideModeSelect,
@@ -405,6 +405,83 @@ document.getElementById('btn-mine-noble').addEventListener('click', () => {
 
 document.getElementById('btn-mine-neighbor').addEventListener('click', () => {
   startMiningProcess(miningFeeNeighbor(), 11, 50, 'neighbor', '隣国との独占取引', 60 * 60, 'all');
+});
+
+// --- 冒険者の持ち込み（資金500万G以上で解放。未発見の宝石を鑑定額の10倍で買い取る図録コンプリート補助） ---
+const ADVENTURER_MIN_MONEY = 5000000;
+const ADVENTURER_PRICE_MULT = 10;
+let pendingAdventurerGem = null;
+let pendingAdventurerPrice = 0;
+
+document.getElementById('btn-adventurer').addEventListener('click', () => {
+  if (state.money < ADVENTURER_MIN_MONEY) {
+    showCustomAlert(`冒険者は資金 ${ADVENTURER_MIN_MONEY.toLocaleString()} G 以上の店にしか持ち込まないようです。`);
+    return;
+  }
+  const undiscovered = Object.values(state.zukanData).filter(e => !e.discovered);
+  if (undiscovered.length === 0) {
+    showCustomAlert('図録はすでにコンプリートしています！');
+    return;
+  }
+  if (state.inventory.length >= 20) {
+    showCustomAlert('保管庫がいっぱいです。宝石を売却するか工房で使って、空きを作ってください。');
+    return;
+  }
+  const target = undiscovered[Math.floor(Math.random() * undiscovered.length)].ref;
+  pendingAdventurerGem = appraiser.appraiseSpecific(target);
+  pendingAdventurerPrice = pendingAdventurerGem.price * ADVENTURER_PRICE_MULT;
+
+  const g = pendingAdventurerGem;
+  document.getElementById('adventurer-choice-visual').style.backgroundColor = `rgb(${g.r}, ${g.g}, ${g.b})`;
+  document.getElementById('adventurer-choice-name').textContent = g.name;
+  document.getElementById('adventurer-choice-stats').textContent = `${g.carat} ct | 透明度: ${g.clarity} | 純度: ${g.purity}% | ${g.rarity}`;
+  const after = state.money - pendingAdventurerPrice;
+  document.getElementById('adventurer-confirm-msg').innerHTML =
+    `冒険者が、まだ図録にない宝石を持ち込んできました！<br><br>鑑定額 <b>${g.price.toLocaleString()} G</b> の10倍、<b style="color:#f4d03f;">${pendingAdventurerPrice.toLocaleString()} G</b> で買い取れます。<br><br>所持金: ${formatMoney(state.money)} G<br>購入後: ${after >= 0 ? formatMoney(after) + ' G' : '<span style="color:#ff7777;">資金不足</span>'}`;
+  const yesBtn = document.getElementById('adventurer-confirm-yes');
+  if (after < 0) {
+    yesBtn.disabled = true;
+    yesBtn.textContent = '資金不足';
+  } else {
+    yesBtn.disabled = false;
+    yesBtn.textContent = '買い取る';
+  }
+  document.getElementById('adventurer-confirm-overlay').style.display = 'flex';
+});
+
+document.getElementById('adventurer-confirm-no').addEventListener('click', () => {
+  document.getElementById('adventurer-confirm-overlay').style.display = 'none';
+  pendingAdventurerGem = null;
+});
+
+document.getElementById('adventurer-confirm-yes').addEventListener('click', () => {
+  document.getElementById('adventurer-confirm-overlay').style.display = 'none';
+  if (!pendingAdventurerGem || state.money < pendingAdventurerPrice) return;
+  if (state.inventory.length >= 20) {
+    showCustomAlert('保管庫がいっぱいです。宝石を売却するか工房で使って、空きを作ってください。');
+    pendingAdventurerGem = null;
+    return;
+  }
+  const g = pendingAdventurerGem;
+  state.money -= pendingAdventurerPrice;
+  state.inventory.push({ ...g, acquiredAt: Date.now() });
+
+  const zEntry = state.zukanData[g.id];
+  if (zEntry) {
+    zEntry.discovered = true;
+    if (g.purity > zEntry.maxPurity) {
+      zEntry.maxPurity = g.purity;
+      zEntry.bestCarat = g.carat;
+      zEntry.bestClarity = g.clarity;
+    }
+  }
+  pendingAdventurerGem = null;
+  saveData();
+  updateShopUI();
+  updateMineMenuUI();
+  checkNobleQuest();
+  checkEnding();
+  showCustomAlert(`🧭 <b>【${g.name}】を買い取りました！</b><br><br>図録に新しい宝石が登録されました。買い取った宝石は保管庫にあり、売却や工房での加工もできます。`);
 });
 
 // --- リセットとセーブのイベント ---
