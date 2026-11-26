@@ -1,4 +1,4 @@
-import { state, RANK_DATA, saveData, ALCHEMY_XP_TABLE, ALCHEMY_MAX_LEVEL, FUSION_OPS, getFusionOp, BOOK_PRICE, miningFeePersonal, miningFeeLong, miningFeeNoble, miningFeeNeighbor, WORKSHOP_ITEMS, WORKSHOP_XP_TABLE, WORKSHOP_MAX_LEVEL, getWorkshopItem, workshopCraftMinutes } from './gameState.js';
+import { state, RANK_DATA, saveData, ALCHEMY_XP_TABLE, ALCHEMY_MAX_LEVEL, FUSION_OPS, getFusionOp, BOOK_PRICE, miningFeePersonal, miningFeeLong, miningFeeNoble, miningFeeNeighbor, WORKSHOP_ITEMS, WORKSHOP_XP_TABLE, WORKSHOP_MAX_LEVEL, getWorkshopItem, workshopCraftMinutes, workshopXpRequired, workshopMilestone, workshopFee, tohoKuzuUnitPrice } from './gameState.js';
 import { computeFusionRGB } from './gameLogic.js';
 
 export function showScreen(screenEl) {
@@ -146,7 +146,7 @@ export function renderZukan() {
           else if (gem.rarity === 'Rare') rarityColor = '#55aaff';
           else if (gem.rarity === 'Uncommon') rarityColor = '#88ff88';
 
-          focusPrice.innerHTML = `<span style="color:${rarityColor}; margin-right:10px;">[${gem.rarity}]</span>最高純度: ${entry.maxPurity}%<br><span style="font-size:0.8rem; color:#a99a86;">${entry.bestCarat} ct / 透明度: ${entry.bestClarity}</span>`;
+          focusPrice.innerHTML = `<span style="color:${rarityColor}; margin-right:10px;">[${gem.rarity}]</span>最高純度: ${entry.maxPurity}%<br><span style="font-size:0.8rem; color:#a99a86;">${entry.bestCarat} ct / 透明度: ${entry.bestClarity} / バッチLv.${gem.level}</span>`;
         } else {
           focusVisual.className = 'focus-gem empty';
           focusVisual.style.backgroundColor = '';
@@ -165,7 +165,7 @@ export function renderZukan() {
 
   const progressEl = document.getElementById('zukan-progress');
   if (progressEl) {
-    progressEl.textContent = `収集率: ${discoveredCount} / ${totalGems}`;
+    progressEl.textContent = `収集率: ${discoveredCount} / ${totalGems}　⚗️ 錬金術Lv: ${state.alchemyLevel} / ${ALCHEMY_MAX_LEVEL}`;
   }
 }
 
@@ -277,7 +277,7 @@ export function renderTohoZukan() {
           focusVisual.style.backgroundColor = '';
           focusName.textContent = '？？？';
           focusName.style.color = '#a99a86';
-          focusInfo.textContent = '最高純度: ---%';
+          focusInfo.innerHTML = `出現: バッチLv.${gem.level}（錬金術Lv.${gem.level}）<br><span style="font-size:0.8rem; color:#a99a86;">${state.alchemyLevel >= gem.level ? '現在の錬金術Lvで出現する' : '錬金術Lvが上がると出現するようになる'}</span>`;
         }
       });
 
@@ -515,7 +515,7 @@ export function updateCraftItemUI() {
       btn.style.cssText = 'background:#2a211a; color:#8a7a66; border:1px solid #4a3929; padding:8px 12px; font-size:0.95rem; border-radius:6px;';
     } else {
       const selected = state.craftItemType === item.id;
-      btn.innerHTML = `${item.name}${selected ? ' ✔' : ''}<br><span style="font-size:0.8rem;">${workshopCraftMinutes(item)}分 / ×${item.multMin}〜${item.multMax} / ${item.fee.toLocaleString()} G</span>`;
+      btn.innerHTML = `${item.name}${selected ? ' ✔' : ''}<br><span style="font-size:0.8rem;">${workshopCraftMinutes(item)}分 / ×${item.multMin}〜${item.multMax} / ${workshopFee(item).toLocaleString()} G</span>`;
       btn.style.cssText = selected
         ? 'background:linear-gradient(to bottom,#8b1e1e,#5a1111); color:#f4d03f; border:2px solid #d4af37; padding:8px 12px; font-size:0.95rem; border-radius:6px;'
         : 'background:#221a14; color:#e0d5c1; border:1px solid #8b6b4a; padding:8px 12px; font-size:0.95rem; border-radius:6px;';
@@ -528,7 +528,7 @@ export function updateCraftItemUI() {
   });
   const current = getWorkshopItem(state.craftItemType);
   const btnStart = document.getElementById('btn-start-craft');
-  if (btnStart) btnStart.textContent = `加工を依頼する (${current.name} ${current.fee.toLocaleString()} G)`;
+  if (btnStart) btnStart.textContent = `加工を依頼する (${current.name} ${workshopFee(current).toLocaleString()} G)`;
 }
 
 export function renderWorkshop() {
@@ -548,9 +548,11 @@ export function renderWorkshop() {
   const levelInfo = document.getElementById('workshop-level-info');
   let levelText = state.workshopLevel >= WORKSHOP_MAX_LEVEL
     ? `🔨 工房Lv.${state.workshopLevel}（最大）`
-    : `🔨 工房Lv.${state.workshopLevel}　XP: ${state.workshopXP} / ${WORKSHOP_XP_TABLE[state.workshopLevel]}`;
+    : `🔨 工房Lv.${state.workshopLevel}　XP: ${state.workshopXP} / ${workshopXpRequired(state.workshopLevel)}`;
   if (state.workshopLevel >= 3) levelText += '　弟子が加工を手伝っています';
-  levelInfo.textContent = levelText;
+  const wsMilestone = workshopMilestone();
+  if (wsMilestone >= 1) levelText += `<br>🎁 Lv${wsMilestone * 10}ボーナス: 加工費 −${wsMilestone * 10}% / 宝飾品の売却額 +${wsMilestone * 10}%`;
+  levelInfo.innerHTML = levelText;
 
   const statusContainer = document.getElementById('crafting-status-container');
   const selectContainer = document.getElementById('craft-select-container');
@@ -827,9 +829,10 @@ export function showOpSelect() {
 export function renderLab() {
   const alchemyInfo = document.getElementById('lab-alchemy-info');
   if (alchemyInfo) {
-    alchemyInfo.textContent = state.alchemyLevel >= ALCHEMY_MAX_LEVEL
+    alchemyInfo.innerHTML = (state.alchemyLevel >= ALCHEMY_MAX_LEVEL
       ? `⚗️ 錬金術Lv.${state.alchemyLevel}（MAX）`
-      : `⚗️ 錬金術Lv.${state.alchemyLevel}　XP: ${state.alchemyXP} / ${ALCHEMY_XP_TABLE[state.alchemyLevel]}`;
+      : `⚗️ 錬金術Lv.${state.alchemyLevel}　XP: ${state.alchemyXP} / ${ALCHEMY_XP_TABLE[state.alchemyLevel]}`)
+      + (state.alchemyLevel >= 10 ? `<br>🎁 Lv10ボーナス: クズ石の補充価格 −30%（1個 ${tohoKuzuUnitPrice().toLocaleString()} G）` : '');
   }
   // 通常 / 東方モード切替まわりの表示
   const isToho = state.labMode === 'toho';

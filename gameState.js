@@ -32,7 +32,7 @@ export const TOHO_LAB_CAP = 20;
 
 // 工房レベルシステム（2026-11-13設計・2026-11-14実装）: 技の熟練＝品目の解放と時間短縮
 // 経験値 = 完成品の売却額 ÷ 100（受け取り時に付与）。全員Lv1から、遡及なし。
-export const WORKSHOP_MAX_LEVEL = 5;
+export const WORKSHOP_MAX_LEVEL = 50;
 export const WORKSHOP_XP_TABLE = { 1: 300, 2: 600, 3: 1000, 4: 1600 };
 export const WORKSHOP_ITEMS = [
   { id: 'ring', name: '指輪', unlockLevel: 1, baseMinutes: 30, multMin: 1.2, multMax: 2.2, fee: 1000 },
@@ -41,6 +41,26 @@ export const WORKSHOP_ITEMS = [
 ];
 export function getWorkshopItem(id) {
   return WORKSHOP_ITEMS.find(i => i.id === id) || WORKSHOP_ITEMS[0];
+}
+
+// 工房Lv n → n+1 に必要なXP。Lv1〜4は従来テーブル、Lv5以降は緩やかな直線増加
+export function workshopXpRequired(level) {
+  if (level < 5) return WORKSHOP_XP_TABLE[level] || 1600;
+  return 1600 + 200 * (level - 4);
+}
+// 10レベルごとの節目ボーナス: 節目1つにつき加工費 −10% / 宝飾品の売却額 +10%
+export function workshopMilestone() {
+  return Math.floor(state.workshopLevel / 10);
+}
+export function workshopFee(item) {
+  return Math.floor(item.fee * (1 - 0.1 * workshopMilestone()));
+}
+export function workshopSellFactor() {
+  return 1 + 0.1 * workshopMilestone();
+}
+// 錬金術Lv10ボーナス: 東方貿易のクズ石が1個 700 G（−30%）
+export function tohoKuzuUnitPrice() {
+  return state.alchemyLevel >= 10 ? 700 : TOHO_KUZU_UNIT_PRICE;
 }
 // 弟子による時間短縮: Lv3で ×2/3、Lv5で ×1/2
 export function workshopTimeFactor() {
@@ -146,8 +166,8 @@ export function grantWorkshopXP(gain) {
   const events = { levelsGained: [] };
   if (state.workshopLevel >= WORKSHOP_MAX_LEVEL || gain <= 0) return events;
   state.workshopXP += gain;
-  while (state.workshopLevel < WORKSHOP_MAX_LEVEL && state.workshopXP >= WORKSHOP_XP_TABLE[state.workshopLevel]) {
-    state.workshopXP -= WORKSHOP_XP_TABLE[state.workshopLevel];
+  while (state.workshopLevel < WORKSHOP_MAX_LEVEL && state.workshopXP >= workshopXpRequired(state.workshopLevel)) {
+    state.workshopXP -= workshopXpRequired(state.workshopLevel);
     state.workshopLevel++;
     events.levelsGained.push(state.workshopLevel);
   }
