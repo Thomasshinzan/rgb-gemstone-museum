@@ -18,8 +18,22 @@ export function showCustomAlert(msg, append = false) {
   overlay.style.display = 'flex';
 }
 
+// 資金を万・億単位で短く表示する（桁数が増えても表示が崩れないように。全桁の精度は保持する）
+export function formatMoney(n) {
+  n = Math.floor(n);
+  if (n < 10000) return n.toLocaleString();
+  const oku = Math.floor(n / 100000000);
+  const man = Math.floor((n % 100000000) / 10000);
+  const rest = n % 10000;
+  let str = '';
+  if (oku > 0) str += oku + '億';
+  if (man > 0) str += man + '万';
+  if (rest > 0) str += rest;
+  return str || '0';
+}
+
 export function updateShopUI() {
-  document.getElementById('money-display').textContent = state.money.toLocaleString();
+  document.getElementById('money-display').textContent = formatMoney(state.money);
   const currentRankData = RANK_DATA[state.shopRank];
   state.employees = currentRankData.employees;
   
@@ -436,6 +450,26 @@ export function updateMineMenuUI() {
   } else {
     btnMineBotayama.innerHTML = "⛏️ 廃鉱のボタ山 (無料)<br><span style='font-size:0.9rem; font-weight:normal; color:#a99a86; display:block; margin-top:5px;'>クズ石ばかりだが5秒で拾える。(3〜5個)</span>";
   }
+
+  // 冒険者の持ち込み: 資金500万G以上でのみ姿を見せる（図録コンプリート補助）
+  const adventurerContainer = document.getElementById('adventurer-container');
+  if (adventurerContainer) {
+    const undiscoveredCount = Object.values(state.zukanData).filter(e => !e.discovered).length;
+    if (state.money >= 5000000) {
+      adventurerContainer.style.display = 'block';
+      document.getElementById('adventurer-remain').textContent = undiscoveredCount;
+      const btnAdv = document.getElementById('btn-adventurer');
+      if (undiscoveredCount === 0) {
+        btnAdv.disabled = true;
+        btnAdv.textContent = '図録コンプリート済み';
+      } else {
+        btnAdv.disabled = false;
+        btnAdv.textContent = '持ち込み品を見る';
+      }
+    } else {
+      adventurerContainer.style.display = 'none';
+    }
+  }
 }
 
 export function checkMineUpgradeQuest() {
@@ -723,7 +757,7 @@ export function openBookPurchase() {
     return;
   }
   document.getElementById('book-confirm-msg').innerHTML =
-    `発見した東方の錬金術書には封印がかけられています。<br>解くための対価は <b style="color:#f4d03f;">${BOOK_PRICE.toLocaleString()} G</b>。<br><br>所持金: ${state.money.toLocaleString()} G<br>購入後: ${(state.money - BOOK_PRICE).toLocaleString()} G`;
+    `発見した東方の錬金術書には封印がかけられています。<br>解くための対価は <b style="color:#f4d03f;">${BOOK_PRICE.toLocaleString()} G</b>。<br><br>所持金: ${formatMoney(state.money)} G<br>購入後: ${formatMoney(state.money - BOOK_PRICE)} G`;
   document.getElementById('book-confirm-overlay').style.display = 'flex';
 }
 
