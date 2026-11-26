@@ -1,4 +1,4 @@
-import { state, RANK_DATA, saveData, loadSaveData, BOOK_PRICE, TOHO_KUZU_UNIT_PRICE, TOHO_LAB_CAP, getFusionOp, miningFeePersonal, miningFeeLong, miningFeeNoble, miningFeeNeighbor, getWorkshopItem, workshopCraftMinutes, grantWorkshopXP } from './gameState.js';
+import { state, RANK_DATA, saveData, loadSaveData, BOOK_PRICE, TOHO_LAB_CAP, getFusionOp, miningFeePersonal, miningFeeLong, miningFeeNoble, miningFeeNeighbor, getWorkshopItem, workshopCraftMinutes, grantWorkshopXP, workshopFee, workshopSellFactor, tohoKuzuUnitPrice } from './gameState.js';
 import { 
   showScreen, showCustomAlert, updateShopUI, renderZukan, formatMoney,
   checkNobleQuest, checkCountessQuest, checkEnding, updateMineMenuUI, 
@@ -162,13 +162,14 @@ document.getElementById('btn-buy-kuzu').addEventListener('click', () => {
     showCustomAlert(`東方のクズ石は満杯です（${TOHO_LAB_CAP} 個まで）。`);
     return;
   }
-  const affordable = Math.floor(state.money / TOHO_KUZU_UNIT_PRICE);
+  const unitPrice = tohoKuzuUnitPrice();
+  const affordable = Math.floor(state.money / unitPrice);
   if (affordable <= 0) {
-    showCustomAlert(`資金が足りません。<br>クズ石の補充には1個 <b>${TOHO_KUZU_UNIT_PRICE.toLocaleString()} G</b> が必要です（あと <b>${(TOHO_KUZU_UNIT_PRICE - state.money).toLocaleString()} G</b>）。`);
+    showCustomAlert(`資金が足りません。<br>クズ石の補充には1個 <b>${unitPrice.toLocaleString()} G</b> が必要です（あと <b>${(unitPrice - state.money).toLocaleString()} G</b>）。`);
     return;
   }
   const count = Math.min(room, affordable);
-  const cost = count * TOHO_KUZU_UNIT_PRICE;
+  const cost = count * unitPrice;
   state.money -= cost;
   for (let i = 0; i < count; i++) {
     state.tohoLabInventory.push({ ...appraiser.createKuzu(), acquiredAt: Date.now() + i });
@@ -215,7 +216,7 @@ document.getElementById('btn-start-craft').addEventListener('click', (e) => {
     showCustomAlert(`「${item.name}」は工房Lv.${item.unlockLevel}で解放されます。<br>（現在の工房Lv.${state.workshopLevel}）`);
     return;
   }
-  const cost = item.fee;
+  const cost = workshopFee(item);
   if (state.money < cost) {
     showCustomAlert(`資金が足りません。<br>加工の依頼には ${cost.toLocaleString()} G 必要です。`);
     return;
@@ -238,7 +239,7 @@ document.getElementById('btn-start-craft').addEventListener('click', (e) => {
 
   const steps = Math.round((item.multMax - item.multMin) * 10);
   const multiplier = Math.round((item.multMin + Math.floor(Math.random() * (steps + 1)) / 10) * 10) / 10;
-  const resultPrice = Math.floor(gem.price * multiplier);
+  const resultPrice = Math.floor(gem.price * multiplier * workshopSellFactor());
 
   state.money -= cost;
   state.inventory.splice(index, 1);
