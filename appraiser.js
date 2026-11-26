@@ -1,4 +1,6 @@
 // appraiser.js の全文
+import { TOHO_TOLERANCE_SCALE } from './gameState.js';
+
 export class Appraiser {
   constructor() {
     this.gemData = {};
@@ -158,6 +160,61 @@ export class Appraiser {
       isKuzu: false, id: gem.id, name: gem.name,
       r: gem.r, g: gem.g, b: gem.b, rarity: gem.rarity,
       carat: q.carat, clarity: q.clarity, purity: q.purity, price: q.price
+    };
+  }
+
+  // 東方の宝石には鑑定額（basePrice）がないため、通常宝石のレアリティ別平均 basePrice を
+  // 「通常宝石だった場合の鑑定額」の換算ベースとして使う
+  _virtualBasePrice(rarity) {
+    if (!this._virtualBaseCache) {
+      const sums = {}, counts = {};
+      for (const key in this.gemData) {
+        (this.gemData[key] || []).forEach(gem => {
+          sums[gem.rarity] = (sums[gem.rarity] || 0) + gem.basePrice;
+          counts[gem.rarity] = (counts[gem.rarity] || 0) + 1;
+        });
+      }
+      this._virtualBaseCache = {};
+      for (const r in sums) this._virtualBaseCache[r] = Math.round(sums[r] / counts[r]);
+    }
+    return this._virtualBaseCache[rarity] || 1000;
+  }
+
+  // 東方の宝石1種について、東方融合と同じ品質決定ロジックで個体を生成する（冒険者の持ち込み用）
+  // 純度: 許容範囲（×TOHO_TOLERANCE_SCALE）内のランダムな点との距離から決定
+  // カラット: クズ石2個（0.1〜0.6ct）の融合と同じ式。透明度: 通常鑑定と同じ重み付き抽選
+  // appraisal: 通常宝石だった場合の鑑定額（換算）。価格計算のベースになる
+  appraiseTohoSpecific(gem) {
+    const tol = this._tolerance(gem.rarity) * TOHO_TOLERANCE_SCALE;
+    const rollChannel = (base) => {
+      const v = Math.round(base + (Math.random() * 2 - 1) * tol);
+      return Math.max(0, Math.min(255, v));
+    };
+    const r = rollChannel(gem.r);
+    const g = rollChannel(gem.g);
+    const b = rollChannel(gem.b);
+    const dist = Math.sqrt(Math.pow(r - gem.r, 2) + Math.pow(g - gem.g, 2) + Math.pow(b - gem.b, 2));
+
+    const maxDist = tol * Math.sqrt(3);
+    let purity = Math.floor(100 - (dist / maxDist) * 50);
+    if (purity > 100) purity = 100;
+    if (purity < 50) purity = 50;
+
+    const parentCarat = () => Math.random() * 0.5 + 0.1;
+    const avgCarat = (parentCarat() + parentCarat()) / 2;
+    const carat = (avgCarat * 1.5 * (1 + (Math.random() * 0.2))).toFixed(2);
+
+    const clarities = ["FL", "IF", "VVS", "VS", "SI", "I"];
+    const clarityIndex = Math.floor(Math.random() * Math.random() * clarities.length);
+    const clarity = clarities[clarities.length - 1 - clarityIndex];
+
+    const shim = { rarity: gem.rarity, basePrice: this._virtualBasePrice(gem.rarity) };
+    const appraisal = this._rollQuality(shim, dist, tol).price;
+
+    return {
+      id: gem.id, name: gem.name,
+      r: gem.r, g: gem.g, b: gem.b, rarity: gem.rarity, level: gem.level,
+      carat, clarity, purity, appraisal
     };
   }
 
