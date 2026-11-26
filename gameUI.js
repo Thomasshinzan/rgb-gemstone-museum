@@ -466,6 +466,25 @@ export function updateMineMenuUI() {
         btnAdv.disabled = false;
         btnAdv.textContent = '持ち込み品を見る';
       }
+
+      const tohoBlock = document.getElementById('adventurer-toho-block');
+      if (tohoBlock) {
+        if (state.bookObtained) {
+          tohoBlock.style.display = 'block';
+          const tohoRemain = Object.values(state.tohoZukanData).filter(e => !e.discovered && e.ref.level <= state.alchemyLevel).length;
+          document.getElementById('adventurer-toho-remain').textContent = tohoRemain;
+          const btnToho = document.getElementById('btn-adventurer-toho');
+          if (tohoRemain === 0) {
+            btnToho.disabled = true;
+            btnToho.textContent = '東方図録コンプリート済み';
+          } else {
+            btnToho.disabled = false;
+            btnToho.textContent = '東方の持ち込み品を見る';
+          }
+        } else {
+          tohoBlock.style.display = 'none';
+        }
+      }
     } else {
       adventurerContainer.style.display = 'none';
     }

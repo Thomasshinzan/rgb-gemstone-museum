@@ -410,8 +410,10 @@ document.getElementById('btn-mine-neighbor').addEventListener('click', () => {
 // --- 冒険者の持ち込み（資金500万G以上で解放。未発見の宝石を鑑定額の10倍で買い取る図録コンプリート補助） ---
 const ADVENTURER_MIN_MONEY = 5000000;
 const ADVENTURER_PRICE_MULT = 10;
+const ADVENTURER_TOHO_PRICE_MULT = 20;
 let pendingAdventurerGem = null;
 let pendingAdventurerPrice = 0;
+let pendingAdventurerKind = 'normal';
 
 document.getElementById('btn-adventurer').addEventListener('click', () => {
   if (state.money < ADVENTURER_MIN_MONEY) {
@@ -428,6 +430,7 @@ document.getElementById('btn-adventurer').addEventListener('click', () => {
     return;
   }
   const target = undiscovered[Math.floor(Math.random() * undiscovered.length)].ref;
+  pendingAdventurerKind = 'normal';
   pendingAdventurerGem = appraiser.appraiseSpecific(target);
   pendingAdventurerPrice = pendingAdventurerGem.price * ADVENTURER_PRICE_MULT;
 
@@ -449,6 +452,40 @@ document.getElementById('btn-adventurer').addEventListener('click', () => {
   document.getElementById('adventurer-confirm-overlay').style.display = 'flex';
 });
 
+document.getElementById('btn-adventurer-toho').addEventListener('click', () => {
+  if (state.money < ADVENTURER_MIN_MONEY) {
+    showCustomAlert(`冒険者は資金 ${ADVENTURER_MIN_MONEY.toLocaleString()} G 以上の店にしか持ち込まないようです。`);
+    return;
+  }
+  if (!state.bookObtained) return;
+  const undiscovered = Object.values(state.tohoZukanData).filter(e => !e.discovered && e.ref.level <= state.alchemyLevel);
+  if (undiscovered.length === 0) {
+    showCustomAlert('解読済みバッチの東方図録はすでにコンプリートしています！');
+    return;
+  }
+  const target = undiscovered[Math.floor(Math.random() * undiscovered.length)].ref;
+  pendingAdventurerKind = 'toho';
+  pendingAdventurerGem = appraiser.appraiseTohoSpecific(target);
+  pendingAdventurerPrice = pendingAdventurerGem.appraisal * ADVENTURER_TOHO_PRICE_MULT;
+
+  const t = pendingAdventurerGem;
+  document.getElementById('adventurer-choice-visual').style.backgroundColor = `rgb(${t.r}, ${t.g}, ${t.b})`;
+  document.getElementById('adventurer-choice-name').textContent = t.name;
+  document.getElementById('adventurer-choice-stats').textContent = `${t.carat} ct | 透明度: ${t.clarity} | 純度: ${t.purity}% | ${t.rarity} | バッチ${t.level}`;
+  const after = state.money - pendingAdventurerPrice;
+  document.getElementById('adventurer-confirm-msg').innerHTML =
+    `冒険者が、まだ東方図録にない宝石を調達してきました！<br><br>通常の宝石に換算した鑑定額 <b>${t.appraisal.toLocaleString()} G</b> の20倍、<b style="color:#f4d03f;">${pendingAdventurerPrice.toLocaleString()} G</b> で買い取れます。買い取った宝石は図録に登録され、王家に献上されます。<br><br>所持金: ${formatMoney(state.money)} G<br>購入後: ${after >= 0 ? formatMoney(after) + ' G' : '<span style="color:#ff7777;">資金不足</span>'}`;
+  const yesBtn = document.getElementById('adventurer-confirm-yes');
+  if (after < 0) {
+    yesBtn.disabled = true;
+    yesBtn.textContent = '資金不足';
+  } else {
+    yesBtn.disabled = false;
+    yesBtn.textContent = '買い取る';
+  }
+  document.getElementById('adventurer-confirm-overlay').style.display = 'flex';
+});
+
 document.getElementById('adventurer-confirm-no').addEventListener('click', () => {
   document.getElementById('adventurer-confirm-overlay').style.display = 'none';
   pendingAdventurerGem = null;
@@ -457,6 +494,26 @@ document.getElementById('adventurer-confirm-no').addEventListener('click', () =>
 document.getElementById('adventurer-confirm-yes').addEventListener('click', () => {
   document.getElementById('adventurer-confirm-overlay').style.display = 'none';
   if (!pendingAdventurerGem || state.money < pendingAdventurerPrice) return;
+  if (pendingAdventurerKind === 'toho') {
+    const t = pendingAdventurerGem;
+    state.money -= pendingAdventurerPrice;
+    const zEntry = state.tohoZukanData[t.id];
+    if (zEntry) {
+      zEntry.discovered = true;
+      if (t.purity > zEntry.maxPurity) {
+        zEntry.maxPurity = t.purity;
+        zEntry.bestCarat = t.carat;
+        zEntry.bestClarity = t.clarity;
+      }
+    }
+    pendingAdventurerGem = null;
+    saveData();
+    updateShopUI();
+    updateMineMenuUI();
+    checkEnding();
+    showCustomAlert(`🔮 <b>【${t.name}】を買い取りました！</b><br><br>東方宝石図録に登録され、王家に献上されました。`);
+    return;
+  }
   if (state.inventory.length >= 20) {
     showCustomAlert('保管庫がいっぱいです。宝石を売却するか工房で使って、空きを作ってください。');
     pendingAdventurerGem = null;
