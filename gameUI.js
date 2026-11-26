@@ -572,6 +572,7 @@ export function renderWorkshop() {
     const focusDetails = document.getElementById('craft-focus-details'); 
     const focusPrice = document.getElementById('craft-focus-price');
     const btnStart = document.getElementById('btn-start-craft');
+    const btnSellStored = document.getElementById('btn-sell-stored');
 
     focusVisual.className = 'focus-gem empty';
     focusVisual.style.backgroundColor = '';
@@ -580,6 +581,7 @@ export function renderWorkshop() {
     focusDetails.innerHTML = '';
     focusPrice.textContent = '';
     btnStart.style.display = 'none';
+    btnSellStored.style.display = 'none';
 
     if (state.inventory.length === 0) {
       invList.innerHTML = '<p style="color: #a99a86; font-size: 0.9rem; padding: 20px;">保管庫に宝石がありません。</p>';
@@ -614,7 +616,10 @@ export function renderWorkshop() {
           focusPrice.textContent = `原石価値: ${gem.price.toLocaleString()} G`;
           
           btnStart.style.display = 'inline-block';
-          btnStart.dataset.index = index; 
+          btnStart.dataset.index = index;
+          btnSellStored.style.display = 'inline-block';
+          btnSellStored.dataset.index = index;
+          btnSellStored.textContent = `💰 売却する (${gem.price.toLocaleString()} G)`;
         });
         invList.appendChild(el);
       });
